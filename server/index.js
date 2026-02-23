@@ -27,6 +27,18 @@ const pool = new pg.Pool({
         ? false : { rejectUnauthorized: false }
 });
 
+// Helper for Audit Logs
+const createLog = async (username, action, entity, entityId, details) => {
+    try {
+        await pool.query(
+            'INSERT INTO audit_logs (username, action, entity, entity_id, details) VALUES ($1, $2, $3, $4, $5)',
+            [username, action, entity, entityId, details]
+        );
+    } catch (err) {
+        console.error('Error creating log:', err);
+    }
+};
+
 // Auth Route
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
@@ -67,6 +79,27 @@ app.get('/api/setup-admin', async (req, res) => {
     }
 });
 
+app.get('/api/setup-audit', async (req, res) => {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(50),
+                action VARCHAR(20),
+                entity VARCHAR(50),
+                entity_id VARCHAR(50),
+                details TEXT,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
+        `);
+        res.send('Tabela audit_logs criada com sucesso!');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Erro ao criar tabela de logs: ' + err.message);
+    }
+});
+
 // Routes
 app.get('/api/declarations', async (req, res) => {
     try {
@@ -102,6 +135,11 @@ app.post('/api/declarations', async (req, res) => {
        signature_carrier = EXCLUDED.signature_carrier`,
             [id, number, date, city, JSON.stringify(recipient), JSON.stringify(equipment), JSON.stringify(sender), JSON.stringify(carrier), signatureSender, signatureCarrier]
         );
+
+        // Log the action (we assume the username comes in headers or body for now)
+        const username = req.headers['x-username'] || 'desconhecido';
+        await createLog(username, 'CREATE/UPDATE', 'DECLARATION', id, `Declaração Nº ${number}`);
+
         res.status(201).json({ success: true });
     } catch (err) {
         console.error(err);
@@ -135,12 +173,14 @@ app.get('/api/user-role/:username', async (req, res) => {
 
 app.post('/api/users', async (req, res) => {
     const { username, password, role } = req.body;
+    const adminUsername = req.headers['x-username'] || 'admin';
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         await pool.query(
             'INSERT INTO users (username, password, role) VALUES ($1, $2, $3)',
             [username, hashedPassword, role || 'user']
         );
+        await createLog(adminUsername, 'CREATE', 'USER', username, `Criou usuário ${username} (${role})`);
         res.status(201).json({ success: true });
     } catch (err) {
         console.error(err);
@@ -153,7 +193,9 @@ app.post('/api/users', async (req, res) => {
 
 app.delete('/api/users/:id', async (req, res) => {
     try {
+        const adminUsername = req.headers['x-username'] || 'admin';
         await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]);
+        await createLog(adminUsername, 'DELETE', 'USER', req.params.id, 'Excluiu um usuário');
         res.json({ success: true });
     } catch (err) {
         console.error(err);

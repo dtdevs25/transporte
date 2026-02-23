@@ -28,6 +28,7 @@ import { DeclarationForm } from './components/DeclarationForm';
 import { ConsultationView } from './components/ConsultationView';
 import { SignatureModal } from './components/SignatureModal';
 import { UsersView } from './components/UsersView';
+import { LogsView } from './components/LogsView';
 
 const INITIAL_SENDER: SenderData = {
   name: 'Bruno Carvalho de Souza',
@@ -62,13 +63,14 @@ const INITIAL_EQUIPMENT: Equipment[] = [
   { description: 'Latitude', model: '5420', serialNumber: 'CGWSYP3', unitValue: 4000.00 }
 ];
 
-type ViewState = 'edit' | 'preview' | 'consultation' | 'signature-mode' | 'users';
+type ViewState = 'edit' | 'preview' | 'consultation' | 'signature-mode' | 'users' | 'logs';
 
 const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:3000/api' : '/api';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [userRole, setUserRole] = useState<'master' | 'user' | null>(null);
+  const [currentUsername, setCurrentUsername] = useState<string | null>(null);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [loginError, setLoginError] = useState('');
 
@@ -186,9 +188,10 @@ const App: React.FC = () => {
         const data = await response.json();
         setIsAuthenticated(true);
         setUserRole(data.role);
+        setCurrentUsername(data.username);
         sessionStorage.setItem('is_authenticated', 'true');
         sessionStorage.setItem('user_role', data.role);
-        sessionStorage.setItem('username', loginForm.username);
+        sessionStorage.setItem('username', data.username);
         fetchDeclarations();
       } else {
         const errorData = await response.json();
@@ -205,6 +208,7 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setIsAuthenticated(false);
     setUserRole(null);
+    setCurrentUsername(null);
     setLoginForm({ username: '', password: '' });
     sessionStorage.removeItem('is_authenticated');
     sessionStorage.removeItem('user_role');
@@ -402,13 +406,22 @@ const App: React.FC = () => {
             onClick={() => setView('consultation')}
           />
           {userRole === 'master' && (
-            <SidebarItem
-              icon={<UserIcon className="w-5 h-5" />}
-              label="Usuários"
-              active={view === 'users'}
-              collapsed={isMenuCollapsed}
-              onClick={() => setView('users')}
-            />
+            <>
+              <SidebarItem
+                icon={<UserIcon className="w-5 h-5" />}
+                label="Usuários"
+                active={view === 'users'}
+                collapsed={isMenuCollapsed}
+                onClick={() => setView('users')}
+              />
+              <SidebarItem
+                icon={<ShieldIcon className="w-5 h-5" />}
+                label="Logs"
+                active={view === 'logs'}
+                collapsed={isMenuCollapsed}
+                onClick={() => setView('logs')}
+              />
+            </>
           )}
 
           <div className={`mt-6 pt-5 border-t border-zinc-900/50`}>
@@ -455,7 +468,7 @@ const App: React.FC = () => {
         <header className="no-print sticky top-0 h-16 flex items-center justify-between px-6 bg-white/70 backdrop-blur-xl border-b border-zinc-200/50 z-30">
           <div className="flex items-center gap-4">
             <div className="text-[11px] text-zinc-900 font-black uppercase tracking-widest whitespace-nowrap">
-              {view === 'edit' ? 'Novo Documento' : view === 'consultation' ? 'Histórico' : view === 'users' ? 'Gestão de Usuários' : 'Preview'}
+              {view === 'edit' ? 'Novo Documento' : view === 'consultation' ? 'Histórico' : view === 'users' ? 'Gestão de Usuários' : view === 'logs' ? 'Logs do Sistema' : 'Preview'}
             </div>
           </div>
 
@@ -494,6 +507,10 @@ const App: React.FC = () => {
           ) : view === 'users' ? (
             <div className="p-6 md:p-10 pb-20 max-w-6xl mx-auto w-full">
               <UsersView apiUrl={API_URL} />
+            </div>
+          ) : view === 'logs' ? (
+            <div className="p-6 md:p-10 pb-20 max-w-6xl mx-auto w-full">
+              <LogsView apiUrl={API_URL} />
             </div>
           ) : activeDeclaration && (
             <div className="max-w-[21cm] mx-auto p-6 md:p-10 pb-20 relative">
