@@ -15,21 +15,39 @@ import {
   CheckCircle2Icon
 } from 'lucide-react';
 import { SmartImportModal } from './SmartImportModal';
+import { NotificationType } from './NotificationModal';
 
 interface Props {
-  onGenerate: (data: { sender: SenderData; carrier: CarrierData; equipment: Equipment[]; recipient: RecipientData }) => void;
-  initialSender: SenderData;
-  initialCarrier: CarrierData;
-  initialEquipment: Equipment[];
-  initialRecipient: RecipientData;
+  sender: SenderData;
+  recipient: RecipientData;
+  carrier: CarrierData;
+  equipment: Equipment[];
+  onUpdate: (data: Partial<{
+    sender: SenderData;
+    recipient: RecipientData;
+    carrier: CarrierData;
+    equipment: Equipment[];
+  }>) => void;
+  onGenerate: () => void;
+  onPrint?: () => void;
+  onDownload?: () => void;
+  onSaveManual?: () => void;
+  showNotification: (title: string, message: string, type?: NotificationType, onConfirm?: () => void) => void;
 }
 
-export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, initialCarrier, initialEquipment, initialRecipient }) => {
+export const DeclarationForm: React.FC<Props> = ({
+  sender,
+  recipient,
+  carrier,
+  equipment,
+  onUpdate,
+  onGenerate,
+  onPrint,
+  onDownload,
+  onSaveManual,
+  showNotification
+}) => {
   const [step, setStep] = useState(1);
-  const [sender, setSender] = useState<SenderData>(initialSender);
-  const [carrier, setCarrier] = useState<CarrierData>(initialCarrier);
-  const [equipment, setEquipment] = useState<Equipment[]>(initialEquipment);
-  const [recipient, setRecipient] = useState<RecipientData>(initialRecipient);
   const [isSmartModalOpen, setIsSmartModalOpen] = useState(false);
   const [isSearchingCep, setIsSearchingCep] = useState(false);
   const [isSearchingCnpj, setIsSearchingCnpj] = useState(false);
@@ -64,14 +82,16 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
         const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
         const data = await response.json();
         if (!data.erro) {
-          setSender(prev => ({
-            ...prev,
-            address: data.logradouro || '',
-            bairro: data.bairro || '',
-            city: data.localidade,
-            state: data.uf,
-            zipCode: formatCEP(cleanCep)
-          }));
+          onUpdate({
+            sender: {
+              ...sender,
+              address: data.logradouro || '',
+              bairro: data.bairro || '',
+              city: data.localidade,
+              state: data.uf,
+              zipCode: formatCEP(cleanCep)
+            }
+          });
         }
       } catch (error) {
         console.error('Erro ao buscar CEP:', error);
@@ -89,17 +109,19 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
         const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCnpj}`);
         const data = await response.json();
         if (!data.message) { // BrasilAPI returns 'message' on error
-          setSender(prev => ({
-            ...prev,
-            companyName: data.razao_social || data.nome_fantasia || prev.companyName,
-            address: data.logradouro || prev.address,
-            number: data.numero || prev.number,
-            bairro: data.bairro || prev.bairro,
-            city: data.municipio || prev.city,
-            state: data.uf || prev.state,
-            zipCode: formatCEP(data.cep || prev.zipCode),
-            phone: data.ddd_telefone_1 ? `(${data.ddd_telefone_1}) ${data.telefone_1}` : prev.phone
-          }));
+          onUpdate({
+            sender: {
+              ...sender,
+              companyName: data.razao_social || data.nome_fantasia || sender.companyName,
+              address: data.logradouro || sender.address,
+              number: data.numero || sender.number,
+              bairro: data.bairro || sender.bairro,
+              city: data.municipio || sender.city,
+              state: data.uf || sender.state,
+              zipCode: formatCEP(data.cep || sender.zipCode),
+              phone: data.ddd_telefone_1 ? `(${data.ddd_telefone_1}) ${data.telefone_1}` : sender.phone
+            }
+          });
         }
       } catch (error) {
         console.error('Erro ao buscar CNPJ:', error);
@@ -110,40 +132,41 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
   };
 
   const handleSmartImport = (data: { sender?: Partial<SenderData>; carrier?: Partial<CarrierData>; equipment?: Equipment[] }) => {
-    if (data.sender) {
-      setSender(prev => ({ ...prev, ...data.sender }));
-    }
-    if (data.carrier) {
-      setCarrier(prev => ({ ...prev, ...data.carrier }));
-    }
-    if (data.equipment) {
-      setEquipment(data.equipment);
-    }
+    onUpdate(data);
   };
 
   const handleAddEquipment = () => {
-    setEquipment([...equipment, { description: '', model: '', serialNumber: '', unitValue: 0 }]);
+    onUpdate({ equipment: [...equipment, { description: '', model: '', serialNumber: '', unitValue: 0 }] });
   };
 
   const handleRemoveEquipment = (index: number) => {
-    setEquipment(equipment.filter((_, i) => i !== index));
+    onUpdate({ equipment: equipment.filter((_, i) => i !== index) });
   };
 
   const handleEquipmentChange = (index: number, field: keyof Equipment, value: any) => {
     const updated = [...equipment];
     updated[index] = { ...updated[index], [field]: value };
-    setEquipment(updated);
+    onUpdate({ equipment: updated });
   };
 
-  const handleClear = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (window.confirm("Deseja realmente apagar todos os dados deste formulário?")) {
-      setSender(initialSender);
-      setCarrier(initialCarrier);
-      setEquipment([{ description: '', model: '', serialNumber: '', unitValue: 0 }]);
-      setRecipient(initialRecipient);
-      setStep(1);
-    }
+  const handleClear = () => {
+    showNotification(
+      'Limpar Formulário',
+      'Tem certeza que deseja apagar todos os dados inseridos neste formulário?',
+      'confirm',
+      () => {
+        onUpdate({
+          sender: {
+            name: '', cpf: '', cnpj: '', address: '', number: '', bairro: '', city: '',
+            state: '', zipCode: '', contact: '', phone: '', companyName: ''
+          },
+          carrier: { driverName: '', rg: '', collectionDate: new Date().toISOString().split('T')[0], companyName: '' },
+          equipment: [{ description: '', model: '', serialNumber: '', unitValue: 0 }],
+          recipient: { name: '', cnpj: '', ie: '', address: '', zipCode: '', cityState: '' }
+        });
+        setStep(1);
+      }
+    );
   };
 
   const steps = [
@@ -199,12 +222,12 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="lg:col-span-2">
-                <FormField label="Nome Completo *" value={sender.name} onChange={(v) => setSender({ ...sender, name: v })} />
+                <FormField label="Nome Completo *" value={sender.name} onChange={(v) => onUpdate({ sender: { ...sender, name: v } })} />
               </div>
               <FormField
                 label={`CPF ${isCnpjFilled ? '' : '*'}`}
                 value={sender.cpf}
-                onChange={(v) => setSender({ ...sender, cpf: formatCPF(v) })}
+                onChange={(v) => onUpdate({ sender: { ...sender, cpf: formatCPF(v) } })}
                 placeholder="000.000.000-00"
               />
               <div className="relative">
@@ -213,7 +236,7 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
                   value={sender.cnpj || ''}
                   onChange={(v) => {
                     const formatted = formatCNPJ(v);
-                    setSender({ ...sender, cnpj: formatted });
+                    onUpdate({ sender: { ...sender, cnpj: formatted } });
                     if (formatted.replace(/\D/g, '').length === 14) handleCnpjSearch(formatted);
                   }}
                   placeholder="00.000.000/0000-00"
@@ -227,7 +250,7 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
               <FormField
                 label={`Razão Social ${isCpfFilled ? '' : '*'}`}
                 value={sender.companyName || ''}
-                onChange={(v) => setSender({ ...sender, companyName: v })}
+                onChange={(v) => onUpdate({ sender: { ...sender, companyName: v } })}
                 placeholder="Nome da Empresa"
               />
 
@@ -237,7 +260,7 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
                   value={sender.zipCode}
                   onChange={(v) => {
                     const formatted = formatCEP(v);
-                    setSender({ ...sender, zipCode: formatted });
+                    onUpdate({ sender: { ...sender, zipCode: formatted } });
                     if (formatted.replace(/\D/g, '').length === 8) handleCepSearch(formatted);
                   }}
                   placeholder="00000-000"
@@ -250,14 +273,14 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
               </div>
 
               <div className="md:col-span-2 lg:col-span-2">
-                <FormField label="Endereço Completo *" value={sender.address} onChange={(v) => setSender({ ...sender, address: v })} />
+                <FormField label="Endereço Completo *" value={sender.address} onChange={(v) => onUpdate({ sender: { ...sender, address: v } })} />
               </div>
-              <FormField label="Número *" value={sender.number} onChange={(v) => setSender({ ...sender, number: v })} />
+              <FormField label="Número *" value={sender.number} onChange={(v) => onUpdate({ sender: { ...sender, number: v } })} />
 
-              <FormField label="Bairro *" value={sender.bairro} onChange={(v) => setSender({ ...sender, bairro: v })} />
-              <FormField label="Município *" value={sender.city} onChange={(v) => setSender({ ...sender, city: v })} />
-              <FormField label="Estado *" value={sender.state} onChange={(v) => setSender({ ...sender, state: v })} />
-              <FormField label="Telefone *" value={sender.phone} onChange={(v) => setSender({ ...sender, phone: v })} />
+              <FormField label="Bairro *" value={sender.bairro} onChange={(v) => onUpdate({ sender: { ...sender, bairro: v } })} />
+              <FormField label="Município *" value={sender.city} onChange={(v) => onUpdate({ sender: { ...sender, city: v } })} />
+              <FormField label="Estado *" value={sender.state} onChange={(v) => onUpdate({ sender: { ...sender, state: v } })} />
+              <FormField label="Telefone *" value={sender.phone} onChange={(v) => onUpdate({ sender: { ...sender, phone: v } })} />
             </div>
 
 
@@ -308,10 +331,10 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
               <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest">Dados da Coleta / Transportadora</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <FormField label="Razão Social" value={carrier.companyName} onChange={(v) => setCarrier({ ...carrier, companyName: v })} />
-              <FormField label="Nome do Motorista" value={carrier.driverName} onChange={(v) => setCarrier({ ...carrier, driverName: v })} />
-              <FormField label="RG do Motorista" value={carrier.rg} onChange={(v) => setCarrier({ ...carrier, rg: v })} />
-              <FormField label="Data Prevista" type="date" value={carrier.collectionDate} onChange={(v) => setCarrier({ ...carrier, collectionDate: v })} />
+              <FormField label="Razão Social" value={carrier.companyName} onChange={(v) => onUpdate({ carrier: { ...carrier, companyName: v } })} />
+              <FormField label="Nome do Motorista" value={carrier.driverName} onChange={(v) => onUpdate({ carrier: { ...carrier, driverName: v } })} />
+              <FormField label="RG do Motorista" value={carrier.rg} onChange={(v) => onUpdate({ carrier: { ...carrier, rg: v } })} />
+              <FormField label="Data Prevista" type="date" value={carrier.collectionDate} onChange={(v) => onUpdate({ carrier: { ...carrier, collectionDate: v } })} />
             </div>
           </section>
         )}
@@ -324,15 +347,15 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="lg:col-span-2">
-                <FormField label="Destinatário" value={recipient.name} onChange={(v) => setRecipient({ ...recipient, name: v })} />
+                <FormField label="Destinatário" value={recipient.name} onChange={(v) => onUpdate({ recipient: { ...recipient, name: v } })} />
               </div>
-              <FormField label="CNPJ" value={recipient.cnpj} onChange={(v) => setRecipient({ ...recipient, cnpj: v })} />
-              <FormField label="Inscrição Estadual" value={recipient.ie} onChange={(v) => setRecipient({ ...recipient, ie: v })} />
+              <FormField label="CNPJ" value={recipient.cnpj} onChange={(v) => onUpdate({ recipient: { ...recipient, cnpj: v } })} />
+              <FormField label="Inscrição Estadual" value={recipient.ie} onChange={(v) => onUpdate({ recipient: { ...recipient, ie: v } })} />
               <div className="md:col-span-2 lg:col-span-3">
-                <FormField label="Endereço" value={recipient.address} onChange={(v) => setRecipient({ ...recipient, address: v })} />
+                <FormField label="Endereço" value={recipient.address} onChange={(v) => onUpdate({ recipient: { ...recipient, address: v } })} />
               </div>
-              <FormField label="CEP" value={recipient.zipCode} onChange={(v) => setRecipient({ ...recipient, zipCode: v })} />
-              <FormField label="Cidade/Estado" value={recipient.cityState} onChange={(v) => setRecipient({ ...recipient, cityState: v })} />
+              <FormField label="CEP" value={recipient.zipCode} onChange={(v) => onUpdate({ recipient: { ...recipient, zipCode: v } })} />
+              <FormField label="Cidade/Estado" value={recipient.cityState} onChange={(v) => onUpdate({ recipient: { ...recipient, cityState: v } })} />
             </div>
           </section>
         )}

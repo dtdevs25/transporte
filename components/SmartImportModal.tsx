@@ -13,7 +13,7 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
 
     if (!isOpen) return null;
 
-    const handleProcess = () => {
+    const handleProcess = (importType: 'all' | 'partial') => {
         const lines = text.split('\n');
         const sender: Partial<SenderData> = {};
         const carrier: Partial<CarrierData> = {};
@@ -22,6 +22,7 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
         // Helper regex patterns
         const patterns = {
             cpf: /(?:cpf|documento)[:\s]+([\d.-]+)/i,
+            cnpj: /(?:cnpj)[:\s]+([\d./-]+)/i,
             rg: /(?:rg|identidade)[:\s]+([\d.-]+)/i,
             name: /(?:nome|motorista|remetente)[:\s]+([^\n,]+)/i,
             driver: /(?:motorista|condutor)[:\s]+([^\n,]+)/i,
@@ -35,11 +36,11 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
         text.split('\n').forEach(line => {
             // Basic heuristic parsing
             if (line.match(patterns.cpf)) sender.cpf = line.match(patterns.cpf)![1].trim();
+            if (line.match(patterns.cnpj)) sender.cnpj = line.match(patterns.cnpj)![1].trim();
             if (line.match(patterns.rg)) carrier.rg = line.match(patterns.rg)![1].trim();
             if (line.match(patterns.driver)) carrier.driverName = line.match(patterns.driver)![1].trim();
             if (line.match(patterns.company)) {
                 const val = line.match(patterns.company)![1].trim();
-                // If it looks like a carrier keyword is nearby, assign to carrier
                 if (line.toLowerCase().includes('transp') || line.toLowerCase().includes('coleta')) {
                     carrier.companyName = val;
                 } else {
@@ -52,7 +53,6 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
                 else if (line.toLowerCase().includes('motorista')) carrier.driverName = val;
             }
 
-            // Equipment parsing (simplified for one item or list)
             if (line.match(patterns.equipment) || line.match(patterns.model) || line.match(patterns.serial)) {
                 const descMatch = line.match(patterns.equipment);
                 const modelMatch = line.match(patterns.model);
@@ -60,8 +60,6 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
                 const valueMatch = line.match(patterns.value);
 
                 if (descMatch || modelMatch || serialMatch) {
-                    // We'll try to group them if they are on the same line or nearby
-                    // For now, let's just create one item if we find equipment info
                     const currentItem = {
                         description: descMatch ? descMatch[1].trim() : '',
                         model: modelMatch ? modelMatch[1].trim() : '',
@@ -75,11 +73,27 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
             }
         });
 
-        onImport({
-            sender: Object.keys(sender).length > 0 ? sender : undefined,
-            carrier: Object.keys(carrier).length > 0 ? carrier : undefined,
-            equipment: items.length > 0 ? items : undefined
-        });
+        // Determine what to send based on importType
+        if (importType === 'all') {
+            onImport({
+                sender: Object.keys(sender).length > 0 ? sender : undefined,
+                carrier: Object.keys(carrier).length > 0 ? carrier : undefined,
+                equipment: items.length > 0 ? items : undefined
+            });
+        } else {
+            // How do we know which tab the user is on? 
+            // We should probably pass down the 'activeTab' or just return everything 
+            // and let the parent handle the "partial" logic based on its state.
+            // But the user asked: "ou se ele quer importar apenas o daquela aba, por exemplo sobe so o rementente"
+            // Let's pass the selection back to the parent.
+            onImport({
+                sender: Object.keys(sender).length > 0 ? sender : undefined,
+                carrier: Object.keys(carrier).length > 0 ? carrier : undefined,
+                equipment: items.length > 0 ? items : undefined,
+                isPartial: true
+            });
+        }
+
         setText('');
         onClose();
     };
@@ -118,19 +132,28 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
                     />
                 </div>
 
-                <div className="p-8 border-t border-zinc-50 bg-zinc-50/30 flex gap-4">
+                <div className="p-8 border-t border-zinc-50 bg-zinc-50/30 flex flex-wrap gap-4">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-4 text-xs font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-600 transition-all"
+                        className="px-6 py-4 text-xs font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-600 transition-all"
                     >
                         Cancelar
                     </button>
+
                     <button
-                        onClick={handleProcess}
+                        onClick={() => handleProcess('partial')}
                         disabled={!text.trim()}
-                        className="flex-[2] py-4 bg-zinc-950 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-zinc-800 transition-all disabled:opacity-30 shadow-xl shadow-zinc-950/20"
+                        className="flex-1 py-4 bg-zinc-100 text-zinc-900 border border-zinc-200 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-zinc-200 transition-all disabled:opacity-30"
                     >
-                        Processar e Preencher
+                        Importar só para esta Aba
+                    </button>
+
+                    <button
+                        onClick={() => handleProcess('all')}
+                        disabled={!text.trim()}
+                        className="flex-1 py-4 bg-zinc-950 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-zinc-800 transition-all disabled:opacity-30 shadow-xl shadow-zinc-950/20"
+                    >
+                        Importar Tudo
                     </button>
                 </div>
             </div>

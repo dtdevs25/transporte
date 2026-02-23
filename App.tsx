@@ -30,6 +30,7 @@ import { DeclarationForm } from './components/DeclarationForm';
 import { ConsultationView } from './components/ConsultationView';
 import { SignatureModal } from './components/SignatureModal';
 import { UsersView } from './components/UsersView';
+import { NotificationModal, NotificationType } from './components/NotificationModal';
 import { LogsView } from './components/LogsView';
 
 const INITIAL_SENDER: SenderData = {
@@ -87,6 +88,24 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // Notification Modal State
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: NotificationType;
+    onConfirm?: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const showNotification = (title: string, message: string, type: NotificationType = 'info', onConfirm?: () => void) => {
+    setNotification({ isOpen: true, title, message, type, onConfirm });
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -121,14 +140,14 @@ const App: React.FC = () => {
       });
 
       if (response.ok) {
-        alert("Declaração salva com sucesso!");
+        showNotification('Sucesso', 'Declaração salva com sucesso no histórico.', 'success');
         fetchDeclarations(); // Refresh history
       } else {
-        alert("Erro ao salvar declaração no banco.");
+        showNotification('Erro', 'Houve um problema ao salvar a declaração.', 'error');
       }
     } catch (error) {
       console.error('Error saving manual:', error);
-      alert("Erro de conexão ao salvar.");
+      showNotification('Erro de Conexão', 'Não foi possível conectar ao servidor.', 'error');
     }
   };
 
@@ -246,21 +265,27 @@ const App: React.FC = () => {
   };
 
   const deleteFromHistory = async (id: string) => {
-    if (window.confirm("Deseja realmente excluir este registro permanentemente?")) {
-      try {
-        const response = await fetch(`${API_URL}/declarations/${id}`, { method: 'DELETE' });
-        if (response.ok) {
-          setHistory(prev => prev.filter(h => h.id !== id));
-          if (activeDeclaration?.id === id) {
-            setActiveDeclaration(null);
-            setView('edit');
+    showNotification(
+      'Confirmar Exclusão',
+      'Deseja realmente excluir este registro permanentemente?',
+      'confirm',
+      async () => {
+        try {
+          const response = await fetch(`${API_URL}/declarations/${id}`, { method: 'DELETE' });
+          if (response.ok) {
+            setHistory(prev => prev.filter(h => h.id !== id));
+            showNotification('Sucesso', 'Declaração excluída com sucesso.', 'success');
+            if (activeDeclaration?.id === id) {
+              setActiveDeclaration(null);
+              setView('edit');
+            }
           }
+        } catch (error) {
+          console.error('Error deleting declaration:', error);
+          showNotification('Erro', 'Não foi possível excluir a declaração.', 'error');
         }
-      } catch (error) {
-        console.error('Error deleting declaration:', error);
-        alert('Erro ao excluir declaração');
       }
-    }
+    );
   };
 
   const saveSignature = async (base64: string) => {
@@ -328,10 +353,11 @@ const App: React.FC = () => {
         setCurrentNumber(nextNum);
         setActiveDeclaration(newDecl);
         setView('preview');
+        showNotification('Sucesso', 'Documento gerado e salvo com sucesso!', 'success');
       }
     } catch (error) {
       console.error('Error saving declaration:', error);
-      alert('Erro ao salvar declaração no banco de dados');
+      showNotification('Erro', 'Houve um problema ao gerar o documento.', 'error');
     }
   };
 
@@ -597,6 +623,15 @@ const App: React.FC = () => {
           type={sigModal.type}
         />
       )}
+
+      <NotificationModal
+        isOpen={notification.isOpen}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
+        onConfirm={notification.onConfirm}
+        onClose={() => setNotification({ ...notification, isOpen: false })}
+      />
     </div>
   );
 };
