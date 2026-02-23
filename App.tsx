@@ -280,7 +280,7 @@ const App: React.FC = () => {
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-zinc-100/5 rounded-full blur-3xl group-hover:bg-zinc-100/10 transition-colors"></div>
 
             <header className="mb-10 text-center flex flex-col items-center">
-              <img src="/LOGO_LOGIN.png" alt="Logo Transporte Fácil" className="w-full max-w-[280px] h-auto mb-2 object-contain" />
+              <img src="/LOGO_LOGIN.png" alt="Logo Transporte Fácil" className="w-full max-w-[182px] h-auto mb-2 object-contain" />
             </header>
 
             <form onSubmit={handleLogin} className="space-y-6">
@@ -352,15 +352,12 @@ const App: React.FC = () => {
         className={`no-print h-full bg-zinc-950 text-zinc-100 transition-sidebar flex flex-col z-40 border-r border-zinc-800 shrink-0 overflow-hidden ${isMenuCollapsed ? 'w-20' : 'w-64'}`}
       >
         <div className={`flex items-center border-b border-zinc-900/50 h-16 shrink-0 px-4 ${isMenuCollapsed ? 'justify-center' : 'justify-between'}`}>
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="p-1.5 bg-zinc-100 rounded-xl shrink-0">
-              <FileTextIcon className="w-5 h-5 text-zinc-950" />
-            </div>
-            {!isMenuCollapsed && (
-              <h1 className="text-base font-black tracking-tighter text-white whitespace-nowrap">
-                GERADOR <span className="text-zinc-500 font-medium">DOC</span>
-              </h1>
-            )}
+          <div className="flex items-center justify-center w-full h-full overflow-hidden">
+            <img
+              src={isMenuCollapsed ? "/LOGO_MENU_FECHADO.png" : "/LOGO_MENU_ABERTO.png"}
+              alt="Logo"
+              className={`h-auto transition-all duration-300 ${isMenuCollapsed ? 'w-10' : 'w-48'}`}
+            />
           </div>
         </div>
 
