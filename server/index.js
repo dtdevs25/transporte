@@ -3,6 +3,7 @@ import pg from 'pg';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import bcrypt from 'bcrypt';
 import { fileURLToPath } from 'url';
 
 dotenv.config();
@@ -24,6 +25,30 @@ const pool = new pg.Pool({
         process.env.DATABASE_URL?.includes('srv-captain') ||
         process.env.PGSSLMODE === 'disable')
         ? false : { rejectUnauthorized: false }
+});
+
+// Auth Route
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+        if (result.rows.length === 0) {
+            return res.status(401).json({ error: 'Usuário ou senha inválidos' });
+        }
+
+        const user = result.rows[0];
+        const validPassword = await bcrypt.compare(password, user.password);
+
+        if (!validPassword) {
+            return res.status(401).json({ error: 'Usuário ou senha inválidos' });
+        }
+
+        // Simple auth success (user can implement JWT later if needed)
+        res.json({ success: true, username: user.username });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro no servidor ao tentar logar' });
+    }
 });
 
 // Routes

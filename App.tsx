@@ -18,7 +18,9 @@ import {
   LockIcon,
   UserIcon,
   ArrowRightIcon,
-  SaveIcon
+  SaveIcon,
+  EyeIcon,
+  EyeOffIcon
 } from 'lucide-react';
 import { Declaration, Equipment, SenderData, CarrierData, RecipientData } from './types';
 import { DeclarationPreview } from './components/DeclarationPreview';
@@ -75,6 +77,7 @@ const App: React.FC = () => {
   const [sigModal, setSigModal] = useState<{ open: boolean; type: 'sender' | 'carrier' | null }>({ open: false, type: null });
   const [isMenuCollapsed, setIsMenuCollapsed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handlePrint = () => {
     window.print();
@@ -147,15 +150,31 @@ const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHash);
   }, [history]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginForm.username === 'admin' && loginForm.password === 'admin123') {
-      setIsAuthenticated(true);
-      sessionStorage.setItem('is_authenticated', 'true');
-      setLoginError('');
-      fetchDeclarations();
-    } else {
-      setLoginError('Credenciais inválidas. Tente novamente.');
+    setLoginError('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginForm)
+      });
+
+      if (response.ok) {
+        setIsAuthenticated(true);
+        sessionStorage.setItem('is_authenticated', 'true');
+        fetchDeclarations();
+      } else {
+        const errorData = await response.json();
+        setLoginError(errorData.error || 'Credenciais inválidas. Tente novamente.');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setLoginError('Erro ao conectar com o servidor');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -289,13 +308,20 @@ const App: React.FC = () => {
                 <div className="relative">
                   <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     required
                     value={loginForm.password}
                     onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                    className="w-full pl-12 pr-4 py-3.5 bg-zinc-950 border border-zinc-800 rounded-2xl text-white text-sm outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-600 transition-all font-medium"
+                    className="w-full pl-12 pr-12 py-3.5 bg-zinc-950 border border-zinc-800 rounded-2xl text-white text-sm outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-600 transition-all font-medium"
                     placeholder="••••••••"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
+                  >
+                    {showPassword ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
@@ -307,9 +333,10 @@ const App: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full group flex items-center justify-center gap-3 py-4 bg-zinc-100 hover:bg-white text-zinc-950 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-white/5 transition-all active:scale-[0.98]"
+                disabled={isLoading}
+                className="w-full group flex items-center justify-center gap-3 py-4 bg-zinc-100 hover:bg-white text-zinc-950 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-white/5 transition-all active:scale-[0.98] disabled:opacity-50"
               >
-                Entrar no Sistema
+                {isLoading ? 'Autenticando...' : 'Entrar no Sistema'}
                 <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </form>

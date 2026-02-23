@@ -15,3 +15,14 @@ CREATE TABLE IF NOT EXISTS declarations (
 
 -- Index for faster lookups by number
 CREATE INDEX IF NOT EXISTS idx_declarations_number ON declarations(number);
+
+-- Create users table
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- NOTE: To insert the initial admin user with hashed password (admin123):
+-- INSERT INTO users (username, password) VALUES ('admin', '$2b$10$7R9rT9K1D1z5I1/S1u1G.Oz.E0U9/vC0Xg7j2S1i0p.Z1p.Z1p.Z1');
