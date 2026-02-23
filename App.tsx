@@ -418,18 +418,18 @@ const App: React.FC = () => {
       <div className="flex-1 flex flex-col min-w-0 bg-zinc-50 relative">
         <header className="no-print sticky top-0 h-16 flex items-center justify-between px-6 bg-white/70 backdrop-blur-xl border-b border-zinc-200/50 z-30">
           <div className="flex items-center gap-4">
-            <div className="text-[9px] text-zinc-400 font-black uppercase tracking-[0.3em] whitespace-nowrap">
-              SISTEMA <span className="text-zinc-900">/ {view === 'edit' ? 'Criação' : view === 'consultation' ? 'Consulta' : 'Preview'}</span>
+            <div className="text-[11px] text-zinc-900 font-black uppercase tracking-widest whitespace-nowrap">
+              {view === 'edit' ? 'Novo Documento' : view === 'consultation' ? 'Histórico' : 'Preview'}
             </div>
           </div>
 
           <div className="flex items-center gap-4">
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-950 text-zinc-500 hover:text-white rounded-lg transition-all border border-zinc-200/50 font-black text-[9px] uppercase tracking-widest group"
+              className="flex items-center justify-center w-9 h-9 bg-zinc-100 hover:bg-zinc-950 text-zinc-500 hover:text-white rounded-xl transition-all border border-zinc-200/50 group"
+              title="Sair do Sistema"
             >
-              <LogOutIcon className="w-3.5 h-3.5" />
-              Sair
+              <LogOutIcon className="w-4 h-4" />
             </button>
           </div>
         </header>
