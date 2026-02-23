@@ -248,7 +248,10 @@ const App: React.FC = () => {
     try {
       const response = await fetch(`${API_URL}/declarations`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-username': currentUsername || 'admin'
+        },
         body: JSON.stringify(updatedDecl)
       });
 
@@ -286,7 +289,10 @@ const App: React.FC = () => {
     try {
       const response = await fetch(`${API_URL}/declarations`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-username': currentUsername || 'admin'
+        },
         body: JSON.stringify(newDecl)
       });
 
