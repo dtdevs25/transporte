@@ -1,9 +1,8 @@
-import express from 'express';
-import pg from 'pg';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import bcrypt from 'bcrypt';
+import nodemailer from 'nodemailer';
 import { fileURLToPath } from 'url';
 
 dotenv.config();
@@ -150,7 +149,7 @@ app.post('/api/declarations', async (req, res) => {
 // User Management Routes
 app.get('/api/users', async (req, res) => {
     try {
-        const result = await pool.query('SELECT id, username, role, created_at FROM users ORDER BY username ASC');
+        const result = await pool.query('SELECT id, username, role, email, created_at FROM users ORDER BY username ASC');
         res.json(result.rows);
     } catch (err) {
         console.error(err);
@@ -172,15 +171,15 @@ app.get('/api/user-role/:username', async (req, res) => {
 });
 
 app.post('/api/users', async (req, res) => {
-    const { username, password, role } = req.body;
+    const { username, password, role, email } = req.body;
     const adminUsername = req.headers['x-username'] || 'admin';
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         await pool.query(
-            'INSERT INTO users (username, password, role) VALUES ($1, $2, $3)',
-            [username, hashedPassword, role || 'user']
+            'INSERT INTO users (username, password, role, email) VALUES ($1, $2, $3, $4)',
+            [username, hashedPassword, role || 'user', email]
         );
-        await createLog(adminUsername, 'CREATE', 'USER', username, `Criou usuário ${username} (${role})`);
+        await createLog(adminUsername, 'CREATE', 'USER', username, `Criou usuário ${username} (${role}) com e-mail ${email}`);
         res.status(201).json({ success: true });
     } catch (err) {
         console.error(err);
