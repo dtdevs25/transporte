@@ -164,7 +164,7 @@ app.delete('/api/declarations/:id', async (req, res) => {
 });
 
 app.post('/api/declarations', async (req, res) => {
-    const { id, number, date, city, recipient, equipment, sender, carrier, signatureSender, signatureCarrier } = req.body;
+    const { id, number, date, city, recipient, equipment, sender, carrier, signatureSender, signatureCarrier, pdfBase64 } = req.body;
     try {
         await pool.query(
             `INSERT INTO declarations (id, number, date, city, recipient, equipment, sender, carrier, signature_sender, signature_carrier)
@@ -204,13 +204,32 @@ app.post('/api/declarations', async (req, res) => {
                                 </table>
                             </div>
                             
-                            <p>O documento já está disponível no histórico para visualização e assinatura.</p>
+                            <p>O documento PDF está anexado a este e-mail e também disponível no histórico.</p>
                             <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
                             <p style="font-size: 12px; color: #888; text-align: center;">Este é um e-mail automático, por favor não responda.</p>
                         </div>
                     </div>
                 `;
-                await sendEmail(userEmail, `Declaração de Transporte #${number} - ${recipient.name}`, emailHtml);
+
+                const mailOptions = {
+                    from: `"DocTransporte" <${process.env.SMTP_USER || 'contato@ehspro.com.br'}>`,
+                    to: userEmail,
+                    subject: `Declaração de Transporte #${number} - ${recipient.name}`,
+                    html: emailHtml
+                };
+
+                if (pdfBase64) {
+                    mailOptions.attachments = [
+                        {
+                            filename: `Declaracao_${number}.pdf`,
+                            content: pdfBase64.split('base64,')[1] || pdfBase64,
+                            encoding: 'base64'
+                        }
+                    ];
+                }
+
+                await transporter.sendMail(mailOptions);
+                console.log(`Email enviado para ${userEmail} com anexo: ${!!pdfBase64}`);
             }
         } catch (mailErr) {
             console.error('Erro ao processar envio de email:', mailErr);

@@ -65,6 +65,18 @@ export const DeclarationForm: React.FC<Props> = ({
     return raw.replace(/(\d{5})(\d)/, '$1-$2');
   };
 
+  const formatPhone = (value: string) => {
+    const raw = value.replace(/\D/g, '').slice(0, 11);
+    if (raw.length <= 10) {
+      return raw.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+    }
+    return raw.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  };
+
+  const formatRG = (value: string) => {
+    return value.toUpperCase().replace(/[^0-9X]/g, '').slice(0, 12);
+  };
+
   const formatCNPJ = (value: string) => {
     const raw = value.replace(/\D/g, '').slice(0, 14);
     return raw
@@ -113,7 +125,32 @@ export const DeclarationForm: React.FC<Props> = ({
     }
   };
 
-  const handleCnpjSearch = async (cnpj: string) => {
+  const handleRecipientCepSearch = async (cep: string) => {
+    const cleanCep = cep.replace(/\D/g, '');
+    if (cleanCep.length === 8) {
+      setIsSearchingCep(true);
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+        const data = await response.json();
+        if (!data.erro) {
+          onUpdate({
+            recipient: {
+              ...recipient,
+              address: data.logradouro || '',
+              cityState: `${data.localidade} - ${data.uf}`,
+              zipCode: formatCEP(cleanCep)
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao buscar CEP Destinatário:', error);
+      } finally {
+        setIsSearchingCep(false);
+      }
+    }
+  };
+
+  const handleCnpjSearch = async (cnpj: string, isRecipient = false) => {
     const cleanCnpj = cnpj.replace(/\D/g, '');
     if (cleanCnpj.length === 14) {
       setIsSearchingCnpj(true);
@@ -347,7 +384,12 @@ export const DeclarationForm: React.FC<Props> = ({
               <FormField label="Bairro *" value={sender.bairro} onChange={(v) => onUpdate({ sender: { ...sender, bairro: v } })} />
               <FormField label="Município *" value={sender.city} onChange={(v) => onUpdate({ sender: { ...sender, city: v } })} />
               <FormField label="Estado *" value={sender.state} onChange={(v) => onUpdate({ sender: { ...sender, state: v } })} />
-              <FormField label="Telefone *" value={sender.phone} onChange={(v) => onUpdate({ sender: { ...sender, phone: v } })} />
+              <FormField
+                label="Telefone *"
+                value={sender.phone}
+                onChange={(v) => onUpdate({ sender: { ...sender, phone: formatPhone(v) } })}
+                placeholder="(00) 00000-0000"
+              />
             </div>
 
 
@@ -410,7 +452,12 @@ export const DeclarationForm: React.FC<Props> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <FormField label="Razão Social" value={carrier.companyName} onChange={(v) => onUpdate({ carrier: { ...carrier, companyName: v } })} />
               <FormField label="Nome do Motorista" value={carrier.driverName} onChange={(v) => onUpdate({ carrier: { ...carrier, driverName: v } })} />
-              <FormField label="RG do Motorista" value={carrier.rg} onChange={(v) => onUpdate({ carrier: { ...carrier, rg: v } })} />
+              <FormField
+                label="RG do Motorista"
+                value={carrier.rg}
+                onChange={(v) => onUpdate({ carrier: { ...carrier, rg: formatRG(v) } })}
+                placeholder="RG alfanumérico"
+              />
               <FormField label="Data Prevista" type="date" value={carrier.collectionDate} onChange={(v) => onUpdate({ carrier: { ...carrier, collectionDate: v } })} />
             </div>
           </section>
@@ -426,12 +473,44 @@ export const DeclarationForm: React.FC<Props> = ({
               <div className="lg:col-span-2">
                 <FormField label="Destinatário" value={recipient.name} onChange={(v) => onUpdate({ recipient: { ...recipient, name: v } })} />
               </div>
-              <FormField label="CNPJ" value={recipient.cnpj} onChange={(v) => onUpdate({ recipient: { ...recipient, cnpj: v } })} />
+              <div className="relative">
+                <FormField
+                  label="CNPJ"
+                  value={recipient.cnpj}
+                  onChange={(v) => {
+                    const formatted = formatCNPJ(v);
+                    onUpdate({ recipient: { ...recipient, cnpj: formatted } });
+                    if (formatted.replace(/\D/g, '').length === 14) handleCnpjSearch(formatted, true);
+                  }}
+                  placeholder="00.000.000/0000-00"
+                />
+                {isSearchingCnpj && step === 4 && (
+                  <div className="absolute right-3 top-9 text-zinc-400">
+                    <div className="animate-spin w-4 h-4 border-2 border-zinc-300 border-t-zinc-900 rounded-full" />
+                  </div>
+                )}
+              </div>
               <FormField label="Inscrição Estadual" value={recipient.ie} onChange={(v) => onUpdate({ recipient: { ...recipient, ie: v } })} />
               <div className="md:col-span-2 lg:col-span-3">
                 <FormField label="Endereço" value={recipient.address} onChange={(v) => onUpdate({ recipient: { ...recipient, address: v } })} />
               </div>
-              <FormField label="CEP" value={recipient.zipCode} onChange={(v) => onUpdate({ recipient: { ...recipient, zipCode: v } })} />
+              <div className="relative">
+                <FormField
+                  label="CEP"
+                  value={recipient.zipCode}
+                  onChange={(v) => {
+                    const formatted = formatCEP(v);
+                    onUpdate({ recipient: { ...recipient, zipCode: formatted } });
+                    if (formatted.replace(/\D/g, '').length === 8) handleRecipientCepSearch(formatted);
+                  }}
+                  placeholder="00000-000"
+                />
+                {isSearchingCep && step === 4 && (
+                  <div className="absolute right-3 top-9 text-zinc-400">
+                    <div className="animate-spin w-4 h-4 border-2 border-zinc-300 border-t-zinc-900 rounded-full" />
+                  </div>
+                )}
+              </div>
               <FormField label="Cidade/Estado" value={recipient.cityState} onChange={(v) => onUpdate({ recipient: { ...recipient, cityState: v } })} />
             </div>
           </section>

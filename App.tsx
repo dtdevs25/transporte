@@ -350,37 +350,69 @@ const App: React.FC = () => {
     const nextNum = currentNumber + 1;
     const formattedNum = nextNum.toString().padStart(8, '0');
 
-    const newDecl: Declaration = {
+    const newDeclHost: Declaration = {
       id: crypto.randomUUID(),
       number: formattedNum,
       date: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase(),
       city: 'CAMPINAS',
-      recipient: INITIAL_RECIPIENT,
+      recipient: data.recipient || INITIAL_RECIPIENT,
       equipment: data.equipment || INITIAL_EQUIPMENT,
       sender: data.sender || INITIAL_SENDER,
       carrier: data.carrier || INITIAL_CARRIER,
     };
 
+    setIsLoading(true);
     try {
-      const response = await fetch(`${API_URL}/declarations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-username': currentUsername || 'admin'
-        },
-        body: JSON.stringify(newDecl)
-      });
+      // 1. First, show the preview so html2pdf can find the element
+      setActiveDeclaration(newDeclHost);
+      setView('preview');
 
-      if (response.ok) {
-        setHistory([newDecl, ...history]);
-        setCurrentNumber(nextNum);
-        setActiveDeclaration(newDecl);
-        setView('preview');
-        showNotification('Sucesso', 'Documento gerado e salvo com sucesso!', 'success');
-      }
+      // Wait a bit for React to render the preview content
+      setTimeout(async () => {
+        const element = document.getElementById('declaration-content');
+        let pdfBase64 = null;
+
+        if (element) {
+          const opt = {
+            margin: 0,
+            filename: `Declaracao_${formattedNum}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          };
+
+          try {
+            // @ts-ignore
+            pdfBase64 = await html2pdf().set(opt).from(element).output('datauristring');
+          } catch (pdfErr) {
+            console.error('Error generating PDF for email:', pdfErr);
+          }
+        }
+
+        // 2. Send to backend with PDF anexo
+        const response = await fetch(`${API_URL}/declarations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-username': currentUsername || 'admin'
+          },
+          body: JSON.stringify({ ...newDeclHost, pdfBase64 })
+        });
+
+        if (response.ok) {
+          setHistory([newDeclHost, ...history]);
+          setCurrentNumber(nextNum);
+          showNotification('Sucesso', 'Documento gerado, salvo e enviado por e-mail com sucesso!', 'success');
+        } else {
+          showNotification('Atenção', 'Documento gerado, mas houve um erro ao enviar para o servidor.', 'error');
+        }
+        setIsLoading(false);
+      }, 1000);
+
     } catch (error) {
       console.error('Error saving declaration:', error);
       showNotification('Erro', 'Houve um problema ao gerar o documento.', 'error');
+      setIsLoading(false);
     }
   };
 
