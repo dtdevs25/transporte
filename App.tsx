@@ -482,7 +482,7 @@ const App: React.FC = () => {
 
               <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Usuário</label>
+                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Usuário ou E-mail</label>
                   <div className="relative">
                     <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                     <input
@@ -491,7 +491,7 @@ const App: React.FC = () => {
                       value={loginForm.username}
                       onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
                       className="w-full pl-12 pr-4 py-3.5 bg-zinc-950 border border-zinc-800 rounded-2xl text-white text-sm outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-600 transition-all font-medium"
-                      placeholder="Seu identificador"
+                      placeholder="Username ou dsantos@ctdi.com"
                     />
                   </div>
                 </div>

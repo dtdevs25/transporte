@@ -32,7 +32,7 @@ const pool = new pg.Pool({
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'srv-captain--mailserver',
     port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false,
+    secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
     auth: {
         user: process.env.SMTP_USER || 'contato@ehspro.com.br',
         pass: process.env.SMTP_PASS || 'dankels2',
@@ -72,7 +72,8 @@ const createLog = async (username, action, entity, entityId, details) => {
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
-        const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+        // Agora aceita username OU email
+        const result = await pool.query('SELECT * FROM users WHERE username = $1 OR email = $1', [username]);
         if (result.rows.length === 0) {
             return res.status(401).json({ error: 'Usuário ou senha inválidos' });
         }
@@ -84,7 +85,7 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ error: 'Usuário ou senha inválidos' });
         }
 
-        // Return role for frontend logic
+        // Return role and USERNAME for frontend logic
         res.json({ success: true, username: user.username, role: user.role || 'user' });
     } catch (err) {
         console.error(err);
@@ -97,11 +98,11 @@ app.get('/api/setup-admin', async (req, res) => {
     try {
         const hashedPassword = await bcrypt.hash('admin123', 10);
         await pool.query(
-            `INSERT INTO users (username, password, role) VALUES ($1, $2, $3)
-             ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password, role = EXCLUDED.role`,
-            ['admin', hashedPassword, 'master']
+            `INSERT INTO users (username, password, role, email) VALUES ($1, $2, $3, $4)
+             ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password, role = EXCLUDED.role, email = EXCLUDED.email`,
+            ['admin', hashedPassword, 'master', 'dsantos@ctdi.com']
         );
-        res.send('Usuário administrador criado/atualizado com sucesso! Agora você pode logar com admin / admin123');
+        res.send('Usuário administrador criado/atualizado com sucesso! Agora você pode logar com admin / admin123 e o e-mail dsantos@ctdi.com está vinculado.');
     } catch (err) {
         console.error(err);
         res.status(500).send('Erro ao criar admin: ' + err.message);
