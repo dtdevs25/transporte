@@ -120,6 +120,19 @@ app.get('/api/users', async (req, res) => {
     }
 });
 
+app.get('/api/user-role/:username', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT role FROM users WHERE username = $1', [req.params.username]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuário não encontrado' });
+        }
+        res.json({ role: result.rows[0].role || 'user' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao buscar nível de acesso' });
+    }
+});
+
 app.post('/api/users', async (req, res) => {
     const { username, password, role } = req.body;
     try {

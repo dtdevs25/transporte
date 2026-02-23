@@ -127,10 +127,26 @@ const App: React.FC = () => {
   useEffect(() => {
     const auth = sessionStorage.getItem('is_authenticated');
     const role = sessionStorage.getItem('user_role') as 'master' | 'user' | null;
+    const username = sessionStorage.getItem('username');
+
     if (auth === 'true') {
       setIsAuthenticated(true);
-      setUserRole(role);
       fetchDeclarations();
+
+      if (role) {
+        setUserRole(role);
+      } else if (username) {
+        // Recover role from server if missing in session
+        fetch(`${API_URL}/user-role/${username}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.role) {
+              setUserRole(data.role);
+              sessionStorage.setItem('user_role', data.role);
+            }
+          })
+          .catch(err => console.error('Error recovering role:', err));
+      }
     }
   }, []);
 
@@ -172,6 +188,7 @@ const App: React.FC = () => {
         setUserRole(data.role);
         sessionStorage.setItem('is_authenticated', 'true');
         sessionStorage.setItem('user_role', data.role);
+        sessionStorage.setItem('username', loginForm.username);
         fetchDeclarations();
       } else {
         const errorData = await response.json();
@@ -191,6 +208,7 @@ const App: React.FC = () => {
     setLoginForm({ username: '', password: '' });
     sessionStorage.removeItem('is_authenticated');
     sessionStorage.removeItem('user_role');
+    sessionStorage.removeItem('username');
     window.location.hash = '';
   };
 
