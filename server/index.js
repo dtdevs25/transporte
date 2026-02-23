@@ -1,3 +1,5 @@
+import express from 'express';
+import pg from 'pg';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -20,11 +22,38 @@ app.use(express.json({ limit: '50mb' }));
 // Database connection
 const pool = new pg.Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: (process.env.DATABASE_URL?.includes('localhost') ||
-        process.env.DATABASE_URL?.includes('srv-captain') ||
-        process.env.PGSSLMODE === 'disable')
-        ? false : { rejectUnauthorized: false }
+    ssl: process.env.NODE_ENV === 'production'
+        ? { rejectUnauthorized: false }
+        : false
 });
+
+// Email Transporter Configuration
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'srv-captain--mailserver',
+    port: parseInt(process.env.SMTP_PORT || '587'),
+    secure: false,
+    auth: {
+        user: process.env.SMTP_USER || 'contato@ehspro.com.br',
+        pass: process.env.SMTP_PASS || 'dankels2',
+    },
+    tls: {
+        rejectUnauthorized: false
+    }
+});
+
+const sendEmail = async (to, subject, html) => {
+    try {
+        await transporter.sendMail({
+            from: `"DocTransporte" <${process.env.SMTP_USER || 'contato@ehspro.com.br'}>`,
+            to,
+            subject,
+            html
+        });
+        console.log(`Email enviado para ${to}`);
+    } catch (err) {
+        console.error('Erro ao enviar e-mail:', err);
+    }
+};
 
 // Helper for Audit Logs
 const createLog = async (username, action, entity, entityId, details) => {
