@@ -179,12 +179,10 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
-    if (confirm("Deseja realmente sair da aplicação?")) {
-      setIsAuthenticated(false);
-      setLoginForm({ username: '', password: '' });
-      sessionStorage.removeItem('is_authenticated');
-      window.location.hash = '';
-    }
+    setIsAuthenticated(false);
+    setLoginForm({ username: '', password: '' });
+    sessionStorage.removeItem('is_authenticated');
+    window.location.hash = '';
   };
 
   const deleteFromHistory = async (id: string) => {
