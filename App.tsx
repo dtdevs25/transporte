@@ -279,12 +279,8 @@ const App: React.FC = () => {
           <div className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden group">
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-zinc-100/5 rounded-full blur-3xl group-hover:bg-zinc-100/10 transition-colors"></div>
 
-            <header className="mb-10 text-center">
-              <div className="inline-flex p-4 bg-zinc-100 rounded-3xl mb-6 shadow-xl">
-                <FileTextIcon className="w-7 h-7 text-zinc-950" />
-              </div>
-              <h1 className="text-2xl font-black text-white tracking-tighter uppercase mb-2">Acesso Restrito</h1>
-              <p className="text-zinc-500 font-bold text-[10px] uppercase tracking-[0.3em]">Gerador de Declarações Pro</p>
+            <header className="mb-10 text-center flex flex-col items-center">
+              <img src="/logo.png" alt="Logo Transporte Fácil" className="w-full max-w-[280px] h-auto mb-2 object-contain" />
             </header>
 
             <form onSubmit={handleLogin} className="space-y-6">
@@ -342,7 +338,7 @@ const App: React.FC = () => {
             </form>
 
             <footer className="mt-10 text-center">
-              <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-tighter">© 2024 Industrial Docs - V 2.4.0</p>
+              <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-tighter">© 2026 CTDI do Brasil Ltda.</p>
             </footer>
           </div>
         </div>
