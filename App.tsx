@@ -46,12 +46,12 @@ const INITIAL_SENDER: SenderData = {
 };
 
 const INITIAL_RECIPIENT: RecipientData = {
-  name: '',
-  address: '',
-  cityState: '',
-  zipCode: '',
-  cnpj: '',
-  ie: '',
+  name: 'CTDI do Brasil LTDA',
+  address: 'Av Comendador Aladino Selmi, 4630 - GR2 Campinas - Mod. 18 a 21, Vila San Martin',
+  cityState: 'Campinas - SP',
+  zipCode: '13069-096',
+  cnpj: '01.812.661/0001-84',
+  ie: '244.698.974.115',
 };
 
 const INITIAL_CARRIER: CarrierData = {

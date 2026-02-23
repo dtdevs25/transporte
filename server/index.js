@@ -226,6 +226,16 @@ app.delete('/api/declarations/:id', async (req, res) => {
     }
 });
 
+app.get('/api/logs', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 100');
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao buscar logs' });
+    }
+});
+
 // User Management Routes
 app.get('/api/users', async (req, res) => {
     try {
