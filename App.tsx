@@ -105,8 +105,29 @@ const App: React.FC = () => {
     html2pdf().set(opt).from(element).save();
   };
 
-  const handleSaveManual = () => {
-    alert("Declaração salva com sucesso!");
+  const handleSaveManual = async () => {
+    if (!activeDeclaration) return;
+
+    try {
+      const response = await fetch(`${API_URL}/declarations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-username': currentUsername || 'admin'
+        },
+        body: JSON.stringify(activeDeclaration)
+      });
+
+      if (response.ok) {
+        alert("Declaração salva com sucesso!");
+        fetchDeclarations(); // Refresh history
+      } else {
+        alert("Erro ao salvar declaração no banco.");
+      }
+    } catch (error) {
+      console.error('Error saving manual:', error);
+      alert("Erro de conexão ao salvar.");
+    }
   };
 
   const fetchDeclarations = async () => {
@@ -117,8 +138,12 @@ const App: React.FC = () => {
         const data = await response.json();
         setHistory(data);
         if (data.length > 0) {
-          const lastNum = Math.max(...data.map((d: any) => parseInt(d.number, 10)));
-          if (lastNum > 0) setCurrentNumber(lastNum);
+          // Get the highest number from history to sync the counter
+          const numbers = data.map((d: any) => parseInt(d.number, 10)).filter((n: any) => !isNaN(n));
+          if (numbers.length > 0) {
+            const lastNum = Math.max(...numbers);
+            setCurrentNumber(lastNum);
+          }
         }
       }
     } catch (error) {
