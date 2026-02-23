@@ -85,17 +85,23 @@ export const DeclarationPreview: React.FC<Props> = ({ declaration, onSignatureCl
       {/* Footer Grid */}
       <div className="grid grid-cols-2 gap-4 mb-16">
         <div className="border border-black">
-          <div className="bg-gray-100 border-b border-black p-1 text-center font-bold text-[9px] uppercase">Dados da Pessoa Física (Remetente):</div>
+          <div className="bg-gray-100 border-b border-black p-1 text-center font-bold text-[9px] uppercase">Dados do Remetente:</div>
           <div className="p-2 space-y-1 text-[9px]">
             <div><span className="font-bold">Nome:</span> {declaration.sender.name}</div>
-            <div><span className="font-bold">CPF:</span> {declaration.sender.cpf}</div>
+            {declaration.sender.cnpj ? (
+              <div><span className="font-bold">CNPJ:</span> {declaration.sender.cnpj}</div>
+            ) : (
+              <div><span className="font-bold">CPF:</span> {declaration.sender.cpf}</div>
+            )}
+            {declaration.sender.companyName && declaration.sender.cnpj && (
+              <div><span className="font-bold">Razão Social:</span> {declaration.sender.companyName}</div>
+            )}
             <div className="leading-tight"><span className="font-bold">Endereço:</span> {declaration.sender.address}, {declaration.sender.number}</div>
             <div><span className="font-bold">Bairro:</span> {declaration.sender.bairro}</div>
             <div><span className="font-bold">Município:</span> {declaration.sender.city}</div>
             <div><span className="font-bold">Estado:</span> {declaration.sender.state}</div>
             <div><span className="font-bold">CEP:</span> {declaration.sender.zipCode}</div>
             <div><span className="font-bold">Telefone:</span> {declaration.sender.phone}</div>
-            <div><span className="font-bold">Razão Social:</span> {declaration.sender.companyName}</div>
           </div>
         </div>
 

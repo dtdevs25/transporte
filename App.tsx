@@ -35,6 +35,7 @@ import { LogsView } from './components/LogsView';
 const INITIAL_SENDER: SenderData = {
   name: '',
   cpf: '',
+  cnpj: '',
   address: '',
   number: '',
   bairro: '',

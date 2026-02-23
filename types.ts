@@ -18,6 +18,7 @@ export interface SenderData {
   contact: string;
   phone: string;
   companyName: string;
+  cnpj?: string;
 }
 
 export interface CarrierData {

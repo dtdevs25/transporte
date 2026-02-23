@@ -32,6 +32,7 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
   const [recipient, setRecipient] = useState<RecipientData>(initialRecipient);
   const [isSmartModalOpen, setIsSmartModalOpen] = useState(false);
   const [isSearchingCep, setIsSearchingCep] = useState(false);
+  const [isSearchingCnpj, setIsSearchingCnpj] = useState(false);
 
   const formatCPF = (value: string) => {
     const raw = value.replace(/\D/g, '').slice(0, 11);
@@ -80,6 +81,34 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
     }
   };
 
+  const handleCnpjSearch = async (cnpj: string) => {
+    const cleanCnpj = cnpj.replace(/\D/g, '');
+    if (cleanCnpj.length === 14) {
+      setIsSearchingCnpj(true);
+      try {
+        const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCnpj}`);
+        const data = await response.json();
+        if (!data.message) { // BrasilAPI returns 'message' on error
+          setSender(prev => ({
+            ...prev,
+            companyName: data.razao_social || data.nome_fantasia || prev.companyName,
+            address: data.logradouro || prev.address,
+            number: data.numero || prev.number,
+            bairro: data.bairro || prev.bairro,
+            city: data.municipio || prev.city,
+            state: data.uf || prev.state,
+            zipCode: formatCEP(data.cep || prev.zipCode),
+            phone: data.ddd_telefone_1 ? `(${data.ddd_telefone_1}) ${data.telefone_1}` : prev.phone
+          }));
+        }
+      } catch (error) {
+        console.error('Erro ao buscar CNPJ:', error);
+      } finally {
+        setIsSearchingCnpj(false);
+      }
+    }
+  };
+
   const handleSmartImport = (data: { sender?: Partial<SenderData>; carrier?: Partial<CarrierData>; equipment?: Equipment[] }) => {
     if (data.sender) {
       setSender(prev => ({ ...prev, ...data.sender }));
@@ -124,6 +153,9 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
     { id: 4, name: 'Destinatário', icon: <MapPinIcon className="w-4 h-4" /> },
   ];
 
+  const isCpfFilled = sender.cpf && sender.cpf.replace(/\D/g, '').length === 11;
+  const isCnpjFilled = sender.cnpj && sender.cnpj.replace(/\D/g, '').length === 14;
+
   return (
     <div className="p-6 md:p-10 space-y-10">
       {/* Progress Stepper */}
@@ -153,7 +185,7 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-6 w-1.5 bg-zinc-900 rounded-full"></div>
-                <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest">Remetente (Pessoa Física)</h3>
+                <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest">Remetente (Pessoa Física ou Jurídica)</h3>
               </div>
               <div className="flex gap-4">
                 <button type="button" onClick={() => setIsSmartModalOpen(true)} className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-zinc-100 text-zinc-900 hover:bg-zinc-200 rounded-xl transition-all shadow-sm">
@@ -170,16 +202,33 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
                 <FormField label="Nome Completo *" value={sender.name} onChange={(v) => setSender({ ...sender, name: v })} />
               </div>
               <FormField
-                label="CPF *"
+                label={`CPF ${isCnpjFilled ? '' : '*'}`}
                 value={sender.cpf}
                 onChange={(v) => setSender({ ...sender, cpf: formatCPF(v) })}
                 placeholder="000.000.000-00"
               />
+              <div className="relative">
+                <FormField
+                  label={`CNPJ ${isCpfFilled ? '' : '*'}`}
+                  value={sender.cnpj || ''}
+                  onChange={(v) => {
+                    const formatted = formatCNPJ(v);
+                    setSender({ ...sender, cnpj: formatted });
+                    if (formatted.replace(/\D/g, '').length === 14) handleCnpjSearch(formatted);
+                  }}
+                  placeholder="00.000.000/0000-00"
+                />
+                {isSearchingCnpj && (
+                  <div className="absolute right-3 top-9 text-zinc-400">
+                    <div className="animate-spin w-4 h-4 border-2 border-zinc-300 border-t-zinc-900 rounded-full" />
+                  </div>
+                )}
+              </div>
               <FormField
-                label="Razão Social (CNPJ) *"
-                value={sender.companyName}
-                onChange={(v) => setSender({ ...sender, companyName: formatCNPJ(v) })}
-                placeholder="00.000.000/0000-00"
+                label={`Razão Social ${isCpfFilled ? '' : '*'}`}
+                value={sender.companyName || ''}
+                onChange={(v) => setSender({ ...sender, companyName: v })}
+                placeholder="Nome da Empresa"
               />
 
               <div className="relative">
@@ -211,14 +260,7 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
               <FormField label="Telefone *" value={sender.phone} onChange={(v) => setSender({ ...sender, phone: v })} />
             </div>
 
-            <div className="flex justify-end pt-4">
-              <button
-                onClick={() => setStep(2)}
-                className="flex items-center gap-2 px-8 py-4 bg-zinc-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-xl shadow-zinc-900/20 active:scale-95"
-              >
-                Próximo Passo <ChevronRightIcon className="w-4 h-4" />
-              </button>
-            </div>
+
           </section>
         )}
 
