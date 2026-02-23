@@ -41,8 +41,8 @@ export const DeclarationPreview: React.FC<Props> = ({ declaration, onSignatureCl
 
       {/* Body Text */}
       <div className="mb-8 text-justify">
-        Declaramos para os devidos fins, que não sou contribuinte do ICMS e, portanto, desobrigado da emissão de 
-        nota fiscal, e estou enviando <span className="font-bold">({totalQty.toString().padStart(2, '0')})</span> equipamento(s) para armazenagem no valor total de <span className="font-bold">R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span> para a 
+        Declaramos para os devidos fins, que não sou contribuinte do ICMS e, portanto, desobrigado da emissão de
+        nota fiscal, e estou enviando <span className="font-bold">({totalQty.toString().padStart(2, '0')})</span> equipamento(s) para armazenagem no valor total de <span className="font-bold">R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span> para a
         empresa <span className="font-bold">{declaration.recipient.name}</span> conforme descritos individualmente abaixo:
       </div>
 
@@ -89,14 +89,13 @@ export const DeclarationPreview: React.FC<Props> = ({ declaration, onSignatureCl
           <div className="p-2 space-y-1 text-[9px]">
             <div><span className="font-bold">Nome:</span> {declaration.sender.name}</div>
             <div><span className="font-bold">CPF:</span> {declaration.sender.cpf}</div>
-            <div className="leading-tight"><span className="font-bold">Endereço:</span> {declaration.sender.address}</div>
-            <div><span className="font-bold">Municipio:</span> {declaration.sender.city}</div>
+            <div className="leading-tight"><span className="font-bold">Endereço:</span> {declaration.sender.address}, {declaration.sender.number}</div>
+            <div><span className="font-bold">Bairro:</span> {declaration.sender.bairro}</div>
+            <div><span className="font-bold">Município:</span> {declaration.sender.city}</div>
             <div><span className="font-bold">Estado:</span> {declaration.sender.state}</div>
             <div><span className="font-bold">CEP:</span> {declaration.sender.zipCode}</div>
-            <div><span className="font-bold">Contato:</span> {declaration.sender.contact}</div>
-            <div><span className="font-bold">Telefone/Fax:</span> {declaration.sender.phone}</div>
-            <div><span className="font-bold">E-mail:</span> {declaration.sender.email}</div>
-            <div><span className="font-bold">Razão Social da Empresa:</span> {declaration.sender.companyName}</div>
+            <div><span className="font-bold">Telefone:</span> {declaration.sender.phone}</div>
+            <div><span className="font-bold">Razão Social:</span> {declaration.sender.companyName}</div>
           </div>
         </div>
 
@@ -115,7 +114,7 @@ export const DeclarationPreview: React.FC<Props> = ({ declaration, onSignatureCl
 
       {/* Signatures */}
       <div className="grid grid-cols-2 gap-10">
-        <div 
+        <div
           onClick={() => onSignatureClick?.('sender')}
           className="group relative cursor-pointer text-center"
         >
@@ -133,12 +132,12 @@ export const DeclarationPreview: React.FC<Props> = ({ declaration, onSignatureCl
           <div className="text-[9px] italic opacity-60">(Assinatura na via a ser retornada)</div>
         </div>
 
-        <div 
+        <div
           onClick={() => onSignatureClick?.('carrier')}
           className="group relative cursor-pointer text-center"
         >
           <div className="h-24 flex items-center justify-center border-b border-black mb-2 relative overflow-hidden">
-             {declaration.signatureCarrier ? (
+            {declaration.signatureCarrier ? (
               <img src={declaration.signatureCarrier} alt="Assinatura Motorista" className="max-h-full max-w-full" />
             ) : (
               <div className="no-print opacity-0 group-hover:opacity-100 flex flex-col items-center gap-1 text-blue-600 transition-all">

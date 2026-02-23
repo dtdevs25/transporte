@@ -36,12 +36,13 @@ const INITIAL_SENDER: SenderData = {
   name: '',
   cpf: '',
   address: '',
+  number: '',
+  bairro: '',
   city: '',
   state: '',
   zipCode: '',
   contact: '',
   phone: '',
-  email: '',
   companyName: '',
 };
 
@@ -258,27 +259,6 @@ const App: React.FC = () => {
         console.error('Error deleting declaration:', error);
         alert('Erro ao excluir declaração');
       }
-    }
-  };
-
-  const handleSaveManual = async () => {
-    if (!activeDeclaration) return;
-    try {
-      const response = await fetch(`${API_URL}/declarations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-username': currentUsername || 'admin'
-        },
-        body: JSON.stringify(activeDeclaration)
-      });
-      if (response.ok) {
-        setHistory(prev => prev.map(h => h.id === activeDeclaration.id ? activeDeclaration : h));
-        alert('Alterações salvas com sucesso no banco de dados!');
-      }
-    } catch (error) {
-      console.error('Error saving manually:', error);
-      alert('Erro ao salvar alterações');
     }
   };
 

@@ -46,6 +46,15 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
     return raw.replace(/(\d{5})(\d)/, '$1-$2');
   };
 
+  const formatCNPJ = (value: string) => {
+    const raw = value.replace(/\D/g, '').slice(0, 14);
+    return raw
+      .replace(/^(\d{2})(\d)/, '$1.$2')
+      .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/\.(\d{3})(\d)/, '.$1/$2')
+      .replace(/(\d{4})(\d)/, '$1-$2');
+  };
+
   const handleCepSearch = async (cep: string) => {
     const cleanCep = cep.replace(/\D/g, '');
     if (cleanCep.length === 8) {
@@ -56,7 +65,8 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
         if (!data.erro) {
           setSender(prev => ({
             ...prev,
-            address: `${data.logradouro}${data.bairro ? `, ${data.bairro}` : ''}`,
+            address: data.logradouro || '',
+            bairro: data.bairro || '',
             city: data.localidade,
             state: data.uf,
             zipCode: formatCEP(cleanCep)
@@ -154,24 +164,27 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
                 </button>
               </div>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="lg:col-span-2">
-                <FormField label="Nome Completo" value={sender.name} onChange={(v) => setSender({ ...sender, name: v })} />
+                <FormField label="Nome Completo *" value={sender.name} onChange={(v) => setSender({ ...sender, name: v })} />
               </div>
               <FormField
-                label="CPF"
+                label="CPF *"
                 value={sender.cpf}
                 onChange={(v) => setSender({ ...sender, cpf: formatCPF(v) })}
                 placeholder="000.000.000-00"
               />
-              <FormField label="Razão Social" value={sender.companyName} onChange={(v) => setSender({ ...sender, companyName: v })} />
+              <FormField
+                label="Razão Social (CNPJ) *"
+                value={sender.companyName}
+                onChange={(v) => setSender({ ...sender, companyName: formatCNPJ(v) })}
+                placeholder="00.000.000/0000-00"
+              />
 
-              <div className="md:col-span-2 lg:col-span-3">
-                <FormField label="Endereço Completo" value={sender.address} onChange={(v) => setSender({ ...sender, address: v })} />
-              </div>
               <div className="relative">
                 <FormField
-                  label="CEP"
+                  label="CEP *"
                   value={sender.zipCode}
                   onChange={(v) => {
                     const formatted = formatCEP(v);
@@ -187,10 +200,24 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
                 )}
               </div>
 
-              <FormField label="Município" value={sender.city} onChange={(v) => setSender({ ...sender, city: v })} />
-              <FormField label="Estado" value={sender.state} onChange={(v) => setSender({ ...sender, state: v })} />
-              <FormField label="Telefone" value={sender.phone} onChange={(v) => setSender({ ...sender, phone: v })} />
-              <FormField label="E-mail" value={sender.email} onChange={(v) => setSender({ ...sender, email: v })} />
+              <div className="md:col-span-2 lg:col-span-2">
+                <FormField label="Endereço Completo *" value={sender.address} onChange={(v) => setSender({ ...sender, address: v })} />
+              </div>
+              <FormField label="Número *" value={sender.number} onChange={(v) => setSender({ ...sender, number: v })} />
+
+              <FormField label="Bairro *" value={sender.bairro} onChange={(v) => setSender({ ...sender, bairro: v })} />
+              <FormField label="Município *" value={sender.city} onChange={(v) => setSender({ ...sender, city: v })} />
+              <FormField label="Estado *" value={sender.state} onChange={(v) => setSender({ ...sender, state: v })} />
+              <FormField label="Telefone *" value={sender.phone} onChange={(v) => setSender({ ...sender, phone: v })} />
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <button
+                onClick={() => setStep(2)}
+                className="flex items-center gap-2 px-8 py-4 bg-zinc-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-xl shadow-zinc-900/20 active:scale-95"
+              >
+                Próximo Passo <ChevronRightIcon className="w-4 h-4" />
+              </button>
             </div>
           </section>
         )}

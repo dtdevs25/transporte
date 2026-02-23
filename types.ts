@@ -10,12 +10,13 @@ export interface SenderData {
   name: string;
   cpf: string;
   address: string;
+  number: string;
+  bairro: string;
   city: string;
   state: string;
   zipCode: string;
   contact: string;
   phone: string;
-  email: string;
   companyName: string;
 }
 
