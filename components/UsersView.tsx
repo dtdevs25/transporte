@@ -5,6 +5,7 @@ interface User {
     id: number;
     username: string;
     role: 'master' | 'user';
+    email: string;
     created_at: string;
 }
 
@@ -18,7 +19,7 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
     const [showForm, setShowForm] = useState(false);
-    const [newUser, setNewUser] = useState({ username: '', password: '', role: 'user' as 'master' | 'user' });
+    const [newUser, setNewUser] = useState({ username: '', password: '', role: 'user' as 'master' | 'user', email: '' });
 
     const fetchUsers = async () => {
         setIsLoading(true);
@@ -102,7 +103,7 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
 
             {showForm && (
                 <div className="bg-white p-8 rounded-[2.5rem] border-2 border-zinc-100 shadow-xl animate-in slide-in-from-top-4 duration-300">
-                    <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Usuário</label>
                             <input
@@ -135,6 +136,17 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
                                 <option value="user">Usuário Comum</option>
                                 <option value="master">Administrador (Master)</option>
                             </select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">E-mail</label>
+                            <input
+                                required
+                                type="email"
+                                value={newUser.email}
+                                onChange={e => setNewUser({ ...newUser, email: e.target.value })}
+                                className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl outline-none focus:ring-2 focus:ring-zinc-900 transition-all font-medium"
+                                placeholder="usuario@ctdi.com"
+                            />
                         </div>
                         <div className="md:col-span-3 flex justify-end gap-3 mt-2">
                             <button
@@ -170,6 +182,7 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
                             <thead>
                                 <tr className="bg-zinc-50/80 border-b border-zinc-100">
                                     <th className="px-8 py-5 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Identificador</th>
+                                    <th className="px-8 py-5 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">E-mail</th>
                                     <th className="px-8 py-5 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Nível</th>
                                     <th className="px-8 py-5 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Criado em</th>
                                     <th className="px-8 py-5 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] text-right">Ações</th>
@@ -183,14 +196,14 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
                                                 <div className="w-10 h-10 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-400 group-hover:bg-zinc-900 group-hover:text-white transition-all">
                                                     <UserIcon className="w-5 h-5" />
                                                 </div>
-                                                <span className="font-black text-zinc-900">{user.username}</span>
+                                                <div className="flex flex-col">
+                                                    <span className="font-black text-zinc-900">{user.username}</span>
+                                                    <span className="text-[10px] font-bold text-zinc-400 uppercase">{user.role}</span>
+                                                </div>
                                             </div>
                                         </td>
                                         <td className="px-8 py-6">
-                                            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter ${user.role === 'master' ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-500'}`}>
-                                                {user.role === 'master' && <ShieldIcon className="w-3.5 h-3.5" />}
-                                                {user.role === 'master' ? 'Master' : 'Usuário'}
-                                            </div>
+                                            <span className="text-sm font-semibold text-zinc-500">{user.email || '—'}</span>
                                         </td>
                                         <td className="px-8 py-6 text-sm font-semibold text-zinc-500">
                                             {new Date(user.created_at).toLocaleDateString('pt-BR')}
