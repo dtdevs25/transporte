@@ -31,6 +31,44 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
   const [equipment, setEquipment] = useState<Equipment[]>(initialEquipment);
   const [recipient, setRecipient] = useState<RecipientData>(initialRecipient);
   const [isSmartModalOpen, setIsSmartModalOpen] = useState(false);
+  const [isSearchingCep, setIsSearchingCep] = useState(false);
+
+  const formatCPF = (value: string) => {
+    const raw = value.replace(/\D/g, '').slice(0, 11);
+    return raw
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})/, '$1-$2');
+  };
+
+  const formatCEP = (value: string) => {
+    const raw = value.replace(/\D/g, '').slice(0, 8);
+    return raw.replace(/(\d{5})(\d)/, '$1-$2');
+  };
+
+  const handleCepSearch = async (cep: string) => {
+    const cleanCep = cep.replace(/\D/g, '');
+    if (cleanCep.length === 8) {
+      setIsSearchingCep(true);
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+        const data = await response.json();
+        if (!data.erro) {
+          setSender(prev => ({
+            ...prev,
+            address: `${data.logradouro}${data.bairro ? `, ${data.bairro}` : ''}`,
+            city: data.localidade,
+            state: data.uf,
+            zipCode: formatCEP(cleanCep)
+          }));
+        }
+      } catch (error) {
+        console.error('Erro ao buscar CEP:', error);
+      } finally {
+        setIsSearchingCep(false);
+      }
+    }
+  };
 
   const handleSmartImport = (data: { sender?: Partial<SenderData>; carrier?: Partial<CarrierData>; equipment?: Equipment[] }) => {
     if (data.sender) {
@@ -120,12 +158,35 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
               <div className="lg:col-span-2">
                 <FormField label="Nome Completo" value={sender.name} onChange={(v) => setSender({ ...sender, name: v })} />
               </div>
-              <FormField label="CPF" value={sender.cpf} onChange={(v) => setSender({ ...sender, cpf: v })} />
+              <FormField
+                label="CPF"
+                value={sender.cpf}
+                onChange={(v) => setSender({ ...sender, cpf: formatCPF(v) })}
+                placeholder="000.000.000-00"
+              />
               <FormField label="Razão Social" value={sender.companyName} onChange={(v) => setSender({ ...sender, companyName: v })} />
+
               <div className="md:col-span-2 lg:col-span-3">
                 <FormField label="Endereço Completo" value={sender.address} onChange={(v) => setSender({ ...sender, address: v })} />
               </div>
-              <FormField label="CEP" value={sender.zipCode} onChange={(v) => setSender({ ...sender, zipCode: v })} />
+              <div className="relative">
+                <FormField
+                  label="CEP"
+                  value={sender.zipCode}
+                  onChange={(v) => {
+                    const formatted = formatCEP(v);
+                    setSender({ ...sender, zipCode: formatted });
+                    if (formatted.replace(/\D/g, '').length === 8) handleCepSearch(formatted);
+                  }}
+                  placeholder="00000-000"
+                />
+                {isSearchingCep && (
+                  <div className="absolute right-3 top-9 text-zinc-400">
+                    <div className="animate-spin w-4 h-4 border-2 border-zinc-300 border-t-zinc-900 rounded-full" />
+                  </div>
+                )}
+              </div>
+
               <FormField label="Município" value={sender.city} onChange={(v) => setSender({ ...sender, city: v })} />
               <FormField label="Estado" value={sender.state} onChange={(v) => setSender({ ...sender, state: v })} />
               <FormField label="Telefone" value={sender.phone} onChange={(v) => setSender({ ...sender, phone: v })} />
@@ -244,11 +305,12 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
   );
 };
 
-const FormField: React.FC<{ label: string; value: string; onChange: (v: string) => void; type?: string }> = ({ label, value, onChange, type = "text" }) => (
+const FormField: React.FC<{ label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }> = ({ label, value, onChange, type = "text", placeholder }) => (
   <div className="w-full">
     <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-2 ml-1 tracking-wider">{label}</label>
     <input
       type={type}
+      placeholder={placeholder}
       className="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 outline-none transition-all hover:border-zinc-300 font-medium"
       value={value}
       onChange={(e) => onChange(e.target.value)}
