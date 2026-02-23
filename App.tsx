@@ -280,7 +280,7 @@ const App: React.FC = () => {
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-zinc-100/5 rounded-full blur-3xl group-hover:bg-zinc-100/10 transition-colors"></div>
 
             <header className="mb-10 text-center flex flex-col items-center">
-              <img src="/logo.svg" alt="Logo Transporte Fácil" className="w-full max-w-[280px] h-auto mb-2 object-contain" />
+              <img src="/LOGO_LOGIN.png" alt="Logo Transporte Fácil" className="w-full max-w-[280px] h-auto mb-2 object-contain" />
             </header>
 
             <form onSubmit={handleLogin} className="space-y-6">
