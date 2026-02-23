@@ -22,9 +22,10 @@ app.use(express.json({ limit: '50mb' }));
 // Database connection
 const pool = new pg.Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production'
-        ? { rejectUnauthorized: false }
-        : false
+    ssl: (process.env.DATABASE_URL?.includes('localhost') ||
+        process.env.DATABASE_URL?.includes('srv-captain') ||
+        process.env.PGSSLMODE === 'disable')
+        ? false : { rejectUnauthorized: false }
 });
 
 // Email Transporter Configuration
