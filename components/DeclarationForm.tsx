@@ -74,6 +74,18 @@ export const DeclarationForm: React.FC<Props> = ({
       .replace(/(\d{4})(\d)/, '$1-$2');
   };
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+
+  const parseCurrencyToNumber = (value: string) => {
+    const cleanValue = value.replace(/\D/g, '');
+    return parseFloat(cleanValue) / 100;
+  };
+
   const handleCepSearch = async (cep: string) => {
     const cleanCep = cep.replace(/\D/g, '');
     if (cleanCep.length === 8) {
@@ -149,6 +161,56 @@ export const DeclarationForm: React.FC<Props> = ({
     onUpdate({ equipment: updated });
   };
 
+  const isStep1Valid = () => {
+    const hasCpfOrCnpj = (sender.cpf && sender.cpf.replace(/\D/g, '').length === 11) ||
+      (sender.cnpj && sender.cnpj.replace(/\D/g, '').length === 14);
+
+    return (
+      sender.name.trim().length > 3 &&
+      hasCpfOrCnpj &&
+      sender.address.trim().length > 5 &&
+      sender.number.trim().length > 0 &&
+      sender.bairro.trim().length > 2 &&
+      sender.city.trim().length > 2 &&
+      sender.state.trim().length === 2 &&
+      sender.zipCode.replace(/\D/g, '').length === 8 &&
+      sender.phone.replace(/\D/g, '').length >= 10
+    );
+  };
+
+  const isStep2Valid = () => {
+    return equipment.length > 0 && equipment.every(item =>
+      item.description.trim().length > 2 &&
+      item.model.trim().length > 1 &&
+      item.serialNumber.trim().length > 0 &&
+      item.unitValue > 0
+    );
+  };
+
+  const isStep3Valid = () => {
+    return (
+      carrier.driverName.trim().length > 3 &&
+      carrier.rg.trim().length > 4 &&
+      carrier.collectionDate.length === 10
+    );
+  };
+
+  const isStep4Valid = () => {
+    return (
+      recipient.name.trim().length > 3 &&
+      recipient.address.trim().length > 5 &&
+      recipient.cnpj.replace(/\D/g, '').length === 14
+    );
+  };
+
+  const canNavigateTo = (targetStep: number) => {
+    if (targetStep <= step) return true;
+    if (targetStep === 2) return isStep1Valid();
+    if (targetStep === 3) return isStep1Valid() && isStep2Valid();
+    if (targetStep === 4) return isStep1Valid() && isStep2Valid() && isStep3Valid();
+    return false;
+  };
+
   const handleClear = () => {
     showNotification(
       'Limpar Formulário',
@@ -183,22 +245,27 @@ export const DeclarationForm: React.FC<Props> = ({
     <div className="p-6 md:p-10 space-y-10">
       {/* Progress Stepper */}
       <div className="flex items-center justify-between max-w-4xl mx-auto mb-10">
-        {steps.map((s, idx) => (
-          <React.Fragment key={s.id}>
-            <button
-              onClick={() => setStep(s.id)}
-              className={`flex flex-col items-center gap-2 group transition-all ${step === s.id ? 'opacity-100' : 'opacity-40 hover:opacity-70'}`}
-            >
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-lg ${step === s.id ? 'bg-zinc-900 text-white scale-110' : 'bg-zinc-100 text-zinc-500'}`}>
-                {step > s.id ? <CheckCircle2Icon className="w-6 h-6" /> : s.icon}
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-widest">{s.name}</span>
-            </button>
-            {idx < steps.length - 1 && (
-              <div className={`flex-1 h-0.5 mx-4 rounded-full ${step > s.id + 1 ? 'bg-zinc-900' : 'bg-zinc-100'}`} />
-            )}
-          </React.Fragment>
-        ))}
+        {steps.map((s, idx) => {
+          const isAllowed = canNavigateTo(s.id);
+          return (
+            <React.Fragment key={s.id}>
+              <button
+                type="button"
+                disabled={!isAllowed}
+                onClick={() => setStep(s.id)}
+                className={`flex flex-col items-center gap-2 group transition-all ${step === s.id ? 'opacity-100' : isAllowed ? 'opacity-40 hover:opacity-70' : 'opacity-10 cursor-not-allowed'}`}
+              >
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-lg ${step === s.id ? 'bg-zinc-900 text-white scale-110' : 'bg-zinc-100 text-zinc-500'}`}>
+                  {step > s.id ? <CheckCircle2Icon className="w-6 h-6" /> : s.icon}
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest">{s.name}</span>
+              </button>
+              {idx < steps.length - 1 && (
+                <div className={`flex-1 h-0.5 mx-4 rounded-full ${step > s.id + 1 ? 'bg-zinc-900' : 'bg-zinc-100'}`} />
+              )}
+            </React.Fragment>
+          );
+        })}
       </div>
 
       {/* Form Content */}
@@ -303,13 +370,23 @@ export const DeclarationForm: React.FC<Props> = ({
                 <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-5 bg-zinc-50/50 p-6 rounded-[1.5rem] border border-zinc-100 relative group transition-all hover:bg-white hover:shadow-xl hover:shadow-zinc-200/30">
                   <FormField label="Descrição" value={item.description} onChange={(v) => handleEquipmentChange(idx, 'description', v)} />
                   <FormField label="Modelo" value={item.model} onChange={(v) => handleEquipmentChange(idx, 'model', v)} />
-                  <FormField label="Nº Série" value={item.serialNumber} onChange={(v) => handleEquipmentChange(idx, 'serialNumber', v)} />
+                  <FormField
+                    label="Nº Série"
+                    value={item.serialNumber}
+                    onChange={(v) => handleEquipmentChange(idx, 'serialNumber', v.replace(/\D/g, ''))}
+                    placeholder="Somente números"
+                  />
                   <div className="flex gap-3 items-end">
                     <div className="flex-1">
                       <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-2 ml-1 tracking-wider">Valor Unitário</label>
                       <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs font-bold">R$</span>
-                        <input type="number" className="w-full pl-9 pr-4 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 outline-none font-medium transition-all" value={item.unitValue} onChange={(e) => handleEquipmentChange(idx, 'unitValue', parseFloat(e.target.value) || 0)} />
+                        <input
+                          type="text"
+                          className="w-full pl-4 pr-4 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 outline-none font-medium transition-all"
+                          value={item.unitValue > 0 ? formatCurrency(item.unitValue) : ''}
+                          placeholder="R$ 0,00"
+                          onChange={(e) => handleEquipmentChange(idx, 'unitValue', parseCurrencyToNumber(e.target.value))}
+                        />
                       </div>
                     </div>
                     {equipment.length > 1 && (
@@ -374,7 +451,8 @@ export const DeclarationForm: React.FC<Props> = ({
         {step < 4 ? (
           <button
             onClick={() => setStep(step + 1)}
-            className="flex items-center gap-2 px-8 py-4 bg-zinc-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-xl shadow-zinc-900/20 active:scale-95"
+            disabled={!canNavigateTo(step + 1)}
+            className={`flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl active:scale-95 ${canNavigateTo(step + 1) ? 'bg-zinc-900 text-white hover:bg-zinc-800 shadow-zinc-900/20' : 'bg-zinc-100 text-zinc-300 cursor-not-allowed shadow-none'}`}
           >
             Próximo Passo <ChevronRightIcon className="w-4 h-4" />
           </button>
