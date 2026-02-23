@@ -261,6 +261,27 @@ const App: React.FC = () => {
     }
   };
 
+  const handleSaveManual = async () => {
+    if (!activeDeclaration) return;
+    try {
+      const response = await fetch(`${API_URL}/declarations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-username': currentUsername || 'admin'
+        },
+        body: JSON.stringify(activeDeclaration)
+      });
+      if (response.ok) {
+        setHistory(prev => prev.map(h => h.id === activeDeclaration.id ? activeDeclaration : h));
+        alert('Alterações salvas com sucesso no banco de dados!');
+      }
+    } catch (error) {
+      console.error('Error saving manually:', error);
+      alert('Erro ao salvar alterações');
+    }
+  };
+
   const saveSignature = async (base64: string) => {
     if (!activeDeclaration || !sigModal.type) return;
 

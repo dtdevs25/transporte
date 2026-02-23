@@ -153,6 +153,16 @@ app.get('/api/declarations', async (req, res) => {
     }
 });
 
+app.delete('/api/declarations/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM declarations WHERE id = $1', [req.params.id]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao excluir declaração' });
+    }
+});
+
 app.post('/api/declarations', async (req, res) => {
     const { id, number, date, city, recipient, equipment, sender, carrier, signatureSender, signatureCarrier } = req.body;
     try {
