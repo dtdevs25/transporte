@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { SenderData, CarrierData, Equipment } from '../types';
-import { PlusCircle, Trash2, EraserIcon } from 'lucide-react';
+import { PlusCircle, Trash2, EraserIcon, SparklesIcon } from 'lucide-react';
+import { SmartImportModal } from './SmartImportModal';
 
 interface Props {
   onGenerate: (data: { sender: SenderData; carrier: CarrierData; equipment: Equipment[] }) => void;
@@ -14,6 +15,19 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
   const [sender, setSender] = useState<SenderData>(initialSender);
   const [carrier, setCarrier] = useState<CarrierData>(initialCarrier);
   const [equipment, setEquipment] = useState<Equipment[]>(initialEquipment);
+  const [isSmartModalOpen, setIsSmartModalOpen] = useState(false);
+
+  const handleSmartImport = (data: { sender?: Partial<SenderData>; carrier?: Partial<CarrierData>; equipment?: Equipment[] }) => {
+    if (data.sender) {
+      setSender(prev => ({ ...prev, ...data.sender }));
+    }
+    if (data.carrier) {
+      setCarrier(prev => ({ ...prev, ...data.carrier }));
+    }
+    if (data.equipment) {
+      setEquipment(data.equipment);
+    }
+  };
 
   const handleAddEquipment = () => {
     setEquipment([...equipment, { description: '', model: '', serialNumber: '', unitValue: 0 }]);
@@ -61,16 +75,25 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
       <section>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-             <div className="h-6 w-1.5 bg-zinc-900 rounded-full"></div>
-             <h3 className="text-xs font-black text-zinc-900 uppercase tracking-[0.15em]">Remetente (Pessoa Física)</h3>
+            <div className="h-6 w-1.5 bg-zinc-900 rounded-full"></div>
+            <h3 className="text-xs font-black text-zinc-900 uppercase tracking-[0.15em]">Remetente (Pessoa Física)</h3>
           </div>
-          <button 
-            type="button"
-            onClick={handleClear}
-            className="flex items-center gap-2 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-          >
-            <EraserIcon className="w-4 h-4" /> Limpar
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsSmartModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-zinc-100 text-zinc-900 hover:bg-zinc-200 rounded-xl transition-all shadow-sm"
+            >
+              <SparklesIcon className="w-4 h-4 text-zinc-950" /> Importação Inteligente
+            </button>
+            <button
+              type="button"
+              onClick={handleClear}
+              className="flex items-center gap-2 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+            >
+              <EraserIcon className="w-4 h-4" /> Limpar
+            </button>
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-2">
@@ -78,12 +101,12 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
           </div>
           <FormField label="CPF" value={sender.cpf} onChange={(v) => setSender({ ...sender, cpf: v })} />
           <FormField label="Razão Social" value={sender.companyName} onChange={(v) => setSender({ ...sender, companyName: v })} />
-          
+
           <div className="md:col-span-2 lg:col-span-3">
             <FormField label="Endereço Completo" value={sender.address} onChange={(v) => setSender({ ...sender, address: v })} />
           </div>
           <FormField label="CEP" value={sender.zipCode} onChange={(v) => setSender({ ...sender, zipCode: v })} />
-          
+
           <FormField label="Município" value={sender.city} onChange={(v) => setSender({ ...sender, city: v })} />
           <FormField label="Estado" value={sender.state} onChange={(v) => setSender({ ...sender, state: v })} />
           <FormField label="Telefone" value={sender.phone} onChange={(v) => setSender({ ...sender, phone: v })} />
@@ -95,11 +118,11 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
       <section>
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
-             <div className="h-6 w-1.5 bg-zinc-900 rounded-full"></div>
-             <h3 className="text-xs font-black text-zinc-900 uppercase tracking-[0.15em]">Itens para Transporte</h3>
+            <div className="h-6 w-1.5 bg-zinc-900 rounded-full"></div>
+            <h3 className="text-xs font-black text-zinc-900 uppercase tracking-[0.15em]">Itens para Transporte</h3>
           </div>
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={handleAddEquipment}
             className="flex items-center gap-2 text-[11px] bg-zinc-900 text-white px-4 py-2 rounded-xl hover:bg-zinc-800 transition-all font-bold uppercase tracking-tight shadow-lg shadow-zinc-950/10"
           >
@@ -117,11 +140,11 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
                   <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-2 ml-1 tracking-wider">Valor Unitário</label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs font-bold">R$</span>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       className="w-full pl-9 pr-4 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 outline-none font-medium transition-all"
-                      value={item.unitValue} 
-                      onChange={(e) => handleEquipmentChange(idx, 'unitValue', parseFloat(e.target.value) || 0)} 
+                      value={item.unitValue}
+                      onChange={(e) => handleEquipmentChange(idx, 'unitValue', parseFloat(e.target.value) || 0)}
                     />
                   </div>
                 </div>
@@ -139,8 +162,8 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
       {/* Carrier Section */}
       <section>
         <div className="flex items-center gap-3 mb-6">
-           <div className="h-6 w-1.5 bg-zinc-900 rounded-full"></div>
-           <h3 className="text-xs font-black text-zinc-900 uppercase tracking-[0.15em]">Dados da Coleta / Transportadora</h3>
+          <div className="h-6 w-1.5 bg-zinc-900 rounded-full"></div>
+          <h3 className="text-xs font-black text-zinc-900 uppercase tracking-[0.15em]">Dados da Coleta / Transportadora</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <FormField label="Razão Social" value={carrier.companyName} onChange={(v) => setCarrier({ ...carrier, companyName: v })} />
@@ -158,6 +181,12 @@ export const DeclarationForm: React.FC<Props> = ({ onGenerate, initialSender, in
           Gerar e Visualizar
         </button>
       </div>
+
+      <SmartImportModal
+        isOpen={isSmartModalOpen}
+        onClose={() => setIsSmartModalOpen(false)}
+        onImport={handleSmartImport}
+      />
     </div>
   );
 };

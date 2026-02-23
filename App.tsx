@@ -33,36 +33,36 @@ import { UsersView } from './components/UsersView';
 import { LogsView } from './components/LogsView';
 
 const INITIAL_SENDER: SenderData = {
-  name: 'Bruno Carvalho de Souza',
-  cpf: '041.812.386-10',
-  address: 'Rua Sergipe, 1440, 5º andar, Savassi, Belo Horizonte',
-  city: 'Belo Horizonte',
-  state: 'MG',
-  zipCode: '30130-174',
-  contact: 'Bruno Carvalho de Souza',
-  phone: '+5531997710045',
-  email: 'bruno.carvalho1@gevernova.com',
-  companyName: 'GE Vernova',
+  name: '',
+  cpf: '',
+  address: '',
+  city: '',
+  state: '',
+  zipCode: '',
+  contact: '',
+  phone: '',
+  email: '',
+  companyName: '',
 };
 
 const INITIAL_RECIPIENT: RecipientData = {
-  name: 'CTDI do Brasil LTDA',
-  address: 'Av Comendador Aladino Selmi, 4630 - GR2 Campinas - Mod. 18 a 21, Vila San Martin',
-  cityState: 'Campinas - SP',
-  zipCode: '13069-096',
-  cnpj: '01812661000184',
-  ie: '244.698.974.115',
+  name: '',
+  address: '',
+  cityState: '',
+  zipCode: '',
+  cnpj: '',
+  ie: '',
 };
 
 const INITIAL_CARRIER: CarrierData = {
   driverName: '',
   rg: '',
   collectionDate: new Date().toISOString().split('T')[0],
-  companyName: 'Wikilog',
+  companyName: '',
 };
 
 const INITIAL_EQUIPMENT: Equipment[] = [
-  { description: 'Latitude', model: '5420', serialNumber: 'CGWSYP3', unitValue: 4000.00 }
+  { description: '', model: '', serialNumber: '', unitValue: 0 }
 ];
 
 type ViewState = 'edit' | 'preview' | 'consultation' | 'signature-mode' | 'users' | 'logs';
