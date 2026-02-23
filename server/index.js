@@ -135,9 +135,46 @@ app.post('/api/declarations', async (req, res) => {
             [id, number, date, city, JSON.stringify(recipient), JSON.stringify(equipment), JSON.stringify(sender), JSON.stringify(carrier), signatureSender, signatureCarrier]
         );
 
-        // Log the action (we assume the username comes in headers or body for now)
-        const username = req.headers['x-username'] || 'desconhecido';
-        await createLog(username, 'CREATE/UPDATE', 'DECLARATION', id, `Declaração Nº ${number}`);
+        // Log the action
+        const usernameForLog = req.headers['x-username'] || 'desconhecido';
+        await createLog(usernameForLog, 'CREATE/UPDATE', 'DECLARATION', id, `Declaração Nº ${number}`);
+
+        // Notification Email
+        try {
+            const userResult = await pool.query('SELECT email FROM users WHERE username = $1', [usernameForLog]);
+            const userEmail = userResult.rows[0]?.email;
+
+            if (userEmail) {
+                const emailHtml = `
+                    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
+                        <div style="background: #000; color: #fff; padding: 30px; text-align: center;">
+                            <h2 style="margin: 0; text-transform: uppercase; letter-spacing: 2px;">DocTransporte</h2>
+                            <p style="margin: 10px 0 0; opacity: 0.7;">Nova Declaração Gerada</p>
+                        </div>
+                        <div style="padding: 40px; color: #333; line-height: 1.6;">
+                            <p>Olá <strong>${usernameForLog}</strong>,</p>
+                            <p>Uma nova declaração de transporte foi gerada com sucesso no sistema.</p>
+                            
+                            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 25px 0;">
+                                <table style="width: 100%;">
+                                    <tr><td style="color: #888; padding-bottom: 5px;">Número:</td><td style="font-weight: bold;">#${number}</td></tr>
+                                    <tr><td style="color: #888; padding-bottom: 5px;">Data:</td><td style="font-weight: bold;">${date}</td></tr>
+                                    <tr><td style="color: #888; padding-bottom: 5px;">Cidade:</td><td style="font-weight: bold;">${city}</td></tr>
+                                    <tr><td style="color: #888; padding-bottom: 5px;">Destinatário:</td><td style="font-weight: bold;">${recipient.name}</td></tr>
+                                </table>
+                            </div>
+                            
+                            <p>O documento já está disponível no histórico para visualização e assinatura.</p>
+                            <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
+                            <p style="font-size: 12px; color: #888; text-align: center;">Este é um e-mail automático, por favor não responda.</p>
+                        </div>
+                    </div>
+                `;
+                await sendEmail(userEmail, `Declaração de Transporte #${number} - ${recipient.name}`, emailHtml);
+            }
+        } catch (mailErr) {
+            console.error('Erro ao processar envio de email:', mailErr);
+        }
 
         res.status(201).json({ success: true });
     } catch (err) {
