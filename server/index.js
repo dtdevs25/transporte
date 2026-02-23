@@ -51,6 +51,22 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+// Temporary Setup Route (Visit this once in browser to create admin user)
+app.get('/api/setup-admin', async (req, res) => {
+    try {
+        const hashedPassword = await bcrypt.hash('admin123', 10);
+        await pool.query(
+            `INSERT INTO users (username, password) VALUES ($1, $2)
+             ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password`,
+            ['admin', hashedPassword]
+        );
+        res.send('Usuário administrador criado/atualizado com sucesso! Agora você pode logar com admin / admin123');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Erro ao criar admin: ' + err.message);
+    }
+});
+
 // Routes
 app.get('/api/declarations', async (req, res) => {
     try {
