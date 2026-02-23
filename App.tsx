@@ -20,7 +20,9 @@ import {
   ArrowRightIcon,
   SaveIcon,
   EyeIcon,
-  EyeOffIcon
+  EyeOffIcon,
+  ShieldIcon,
+  ActivityIcon
 } from 'lucide-react';
 import { Declaration, Equipment, SenderData, CarrierData, RecipientData } from './types';
 import { DeclarationPreview } from './components/DeclarationPreview';
@@ -457,8 +459,14 @@ const App: React.FC = () => {
           {isMenuCollapsed ? (
             <ChevronRightIcon className="w-5 h-5 text-zinc-600 group-hover:text-white transition-colors" />
           ) : (
-            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-600 group-hover:text-white transition-colors whitespace-nowrap">
-              <ChevronLeftIcon className="w-4 h-4" /> Recolher
+            <div className="flex items-center gap-3 w-full px-3">
+              <div className="w-10 h-10 bg-zinc-950 text-white rounded-xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                <UserIcon className="w-5 h-5" />
+              </div>
+              <div className="flex flex-col text-left overflow-hidden">
+                <span className="text-[11px] font-black text-white tracking-widest uppercase truncate">{currentUsername || 'Usuário'}</span>
+                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">{userRole === 'master' ? 'Master / Admin' : 'Colaborador'}</span>
+              </div>
             </div>
           )}
         </button>
