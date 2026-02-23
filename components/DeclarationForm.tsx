@@ -380,7 +380,7 @@ export const DeclarationForm: React.FC<Props> = ({
           </button>
         ) : (
           <button
-            onClick={() => onGenerate({ sender, carrier, equipment, recipient })}
+            onClick={() => onGenerate()}
             className="flex items-center gap-2 px-10 py-4 bg-zinc-950 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-zinc-800 transition-all shadow-2xl shadow-zinc-950/30 active:scale-95"
           >
             Finalizar e Gerar <CheckCircle2Icon className="w-5 h-5" />
