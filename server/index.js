@@ -43,8 +43,8 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ error: 'Usuário ou senha inválidos' });
         }
 
-        // Simple auth success (user can implement JWT later if needed)
-        res.json({ success: true, username: user.username });
+        // Return role for frontend logic
+        res.json({ success: true, username: user.username, role: user.role || 'user' });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Erro no servidor ao tentar logar' });
@@ -56,9 +56,9 @@ app.get('/api/setup-admin', async (req, res) => {
     try {
         const hashedPassword = await bcrypt.hash('admin123', 10);
         await pool.query(
-            `INSERT INTO users (username, password) VALUES ($1, $2)
-             ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password`,
-            ['admin', hashedPassword]
+            `INSERT INTO users (username, password, role) VALUES ($1, $2, $3)
+             ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password, role = EXCLUDED.role`,
+            ['admin', hashedPassword, 'master']
         );
         res.send('Usuário administrador criado/atualizado com sucesso! Agora você pode logar com admin / admin123');
     } catch (err) {
@@ -109,13 +109,42 @@ app.post('/api/declarations', async (req, res) => {
     }
 });
 
-app.delete('/api/declarations/:id', async (req, res) => {
+// User Management Routes
+app.get('/api/users', async (req, res) => {
     try {
-        await pool.query('DELETE FROM declarations WHERE id = $1', [req.params.id]);
+        const result = await pool.query('SELECT id, username, role, created_at FROM users ORDER BY username ASC');
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao buscar usuários' });
+    }
+});
+
+app.post('/api/users', async (req, res) => {
+    const { username, password, role } = req.body;
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await pool.query(
+            'INSERT INTO users (username, password, role) VALUES ($1, $2, $3)',
+            [username, hashedPassword, role || 'user']
+        );
+        res.status(201).json({ success: true });
+    } catch (err) {
+        console.error(err);
+        if (err.code === '23505') {
+            return res.status(400).json({ error: 'Usuário já existe' });
+        }
+        res.status(500).json({ error: 'Erro ao criar usuário' });
+    }
+});
+
+app.delete('/api/users/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]);
         res.json({ success: true });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Server error' });
+        res.status(500).json({ error: 'Erro ao excluir usuário' });
     }
 });
 

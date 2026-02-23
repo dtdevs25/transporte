@@ -7,13 +7,14 @@ interface Props {
   history: Declaration[];
   onSelect: (d: Declaration) => void;
   onDelete: (id: string) => void;
+  userRole: 'master' | 'user' | null;
 }
 
-export const ConsultationView: React.FC<Props> = ({ history, onSelect, onDelete }) => {
+export const ConsultationView: React.FC<Props> = ({ history, onSelect, onDelete, userRole }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filtered = history.filter(d => 
-    d.number.includes(searchTerm) || 
+  const filtered = history.filter(d =>
+    d.number.includes(searchTerm) ||
     d.sender.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     d.carrier.companyName.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -27,9 +28,9 @@ export const ConsultationView: React.FC<Props> = ({ history, onSelect, onDelete 
         </div>
         <div className="relative w-full md:w-[400px]">
           <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 w-5 h-5" />
-          <input 
-            type="text" 
-            placeholder="Buscar por Nº, Nome ou Transportadora..." 
+          <input
+            type="text"
+            placeholder="Buscar por Nº, Nome ou Transportadora..."
             className="w-full pl-12 pr-4 py-3.5 bg-white border-2 border-zinc-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-zinc-900 focus:border-transparent outline-none transition-all font-medium"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -54,10 +55,10 @@ export const ConsultationView: React.FC<Props> = ({ history, onSelect, onDelete 
                 <tr>
                   <td colSpan={5} className="px-8 py-32 text-center text-zinc-400">
                     <div className="flex flex-col items-center gap-4">
-                       <div className="p-4 bg-zinc-50 rounded-full">
-                         <SearchIcon className="w-10 h-10 opacity-20" />
-                       </div>
-                       <p className="font-bold uppercase tracking-widest text-[11px]">Nenhum registro encontrado</p>
+                      <div className="p-4 bg-zinc-50 rounded-full">
+                        <SearchIcon className="w-10 h-10 opacity-20" />
+                      </div>
+                      <p className="font-bold uppercase tracking-widest text-[11px]">Nenhum registro encontrado</p>
                     </div>
                   </td>
                 </tr>
@@ -77,26 +78,28 @@ export const ConsultationView: React.FC<Props> = ({ history, onSelect, onDelete 
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex gap-2">
-                         <SignatureBadge active={!!d.signatureSender} label="Rem." />
-                         <SignatureBadge active={!!d.signatureCarrier} label="Mot." />
+                        <SignatureBadge active={!!d.signatureSender} label="Rem." />
+                        <SignatureBadge active={!!d.signatureCarrier} label="Mot." />
                       </div>
                     </td>
                     <td className="px-8 py-6 text-right">
                       <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
-                        <button 
+                        <button
                           onClick={() => onSelect(d)}
                           className="p-3 bg-white hover:bg-zinc-900 text-zinc-400 hover:text-white rounded-xl shadow-sm border border-zinc-100 transition-all"
                           title="Visualizar"
                         >
                           <EyeIcon className="w-5 h-5" />
                         </button>
-                        <button 
-                          onClick={() => onDelete(d.id)}
-                          className="p-3 bg-white hover:bg-red-500 text-zinc-400 hover:text-white rounded-xl shadow-sm border border-zinc-100 transition-all"
-                          title="Excluir"
-                        >
-                          <Trash2Icon className="w-5 h-5" />
-                        </button>
+                        {userRole === 'master' && (
+                          <button
+                            onClick={() => onDelete(d.id)}
+                            className="p-3 bg-white hover:bg-red-500 text-zinc-400 hover:text-white rounded-xl shadow-sm border border-zinc-100 transition-all"
+                            title="Excluir"
+                          >
+                            <Trash2Icon className="w-5 h-5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
