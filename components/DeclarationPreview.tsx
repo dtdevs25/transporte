@@ -119,41 +119,25 @@ export const DeclarationPreview: React.FC<Props> = ({ declaration, onSignatureCl
       </div>
 
       {/* Signatures */}
-      <div className="grid grid-cols-2 gap-10">
-        <div
-          onClick={() => onSignatureClick?.('sender')}
-          className="group relative cursor-pointer text-center"
-        >
-          <div className="h-24 flex items-center justify-center border-b border-black mb-2 relative overflow-hidden">
-            {declaration.signatureSender ? (
-              <img src={declaration.signatureSender} alt="Assinatura Remetente" className="max-h-full max-w-full" />
-            ) : (
-              <div className="no-print opacity-0 group-hover:opacity-100 flex flex-col items-center gap-1 text-blue-600 transition-all">
-                <QrCodeIcon className="w-5 h-5" />
-                <span className="text-[10px] font-bold">Clique para assinar</span>
-              </div>
+      <div className="grid grid-cols-2 gap-10 mt-10">
+        <div className="text-center">
+          <div className="h-20 border-b border-black mb-2 relative">
+            {declaration.signatureSender && (
+              <img src={declaration.signatureSender} alt="Assinatura Remetente" className="max-h-full max-w-full mx-auto" />
             )}
           </div>
-          <div className="font-bold text-xs uppercase">Assinatura do Remetente</div>
-          <div className="text-[9px] italic opacity-60">(Assinatura na via a ser retornada)</div>
+          <div className="font-bold text-[10pt] uppercase">{declaration.sender.name}</div>
+          <div className="text-[9pt] uppercase font-bold text-zinc-400">Assinatura do Remetente</div>
         </div>
 
-        <div
-          onClick={() => onSignatureClick?.('carrier')}
-          className="group relative cursor-pointer text-center"
-        >
-          <div className="h-24 flex items-center justify-center border-b border-black mb-2 relative overflow-hidden">
-            {declaration.signatureCarrier ? (
-              <img src={declaration.signatureCarrier} alt="Assinatura Motorista" className="max-h-full max-w-full" />
-            ) : (
-              <div className="no-print opacity-0 group-hover:opacity-100 flex flex-col items-center gap-1 text-blue-600 transition-all">
-                <QrCodeIcon className="w-5 h-5" />
-                <span className="text-[10px] font-bold">Clique para assinar</span>
-              </div>
+        <div className="text-center">
+          <div className="h-20 border-b border-black mb-2 relative">
+            {declaration.signatureCarrier && (
+              <img src={declaration.signatureCarrier} alt="Assinatura Motorista" className="max-h-full max-w-full mx-auto" />
             )}
           </div>
-          <div className="font-bold text-xs uppercase">Assinatura do Motorista</div>
-          <div className="text-[9px] italic opacity-60">(Assinatura na via a ficar com o remetente)</div>
+          <div className="font-bold text-[10pt] uppercase">{declaration.carrier.driverName}</div>
+          <div className="text-[9pt] uppercase font-bold text-zinc-400">Assinatura do Motorista</div>
         </div>
       </div>
     </div>

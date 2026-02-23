@@ -22,7 +22,8 @@ import {
   EyeIcon,
   EyeOffIcon,
   ShieldIcon,
-  ActivityIcon
+  ActivityIcon,
+  EditIcon
 } from 'lucide-react';
 import { Declaration, Equipment, SenderData, CarrierData, RecipientData } from './types';
 import { DeclarationPreview } from './components/DeclarationPreview';
@@ -416,6 +417,56 @@ const App: React.FC = () => {
     }
   };
 
+  const handleResendEmail = async () => {
+    if (!activeDeclaration) return;
+
+    setIsLoading(true);
+    const element = document.getElementById('declaration-content');
+    let pdfBase64 = null;
+
+    if (element) {
+      const opt = {
+        margin: 0,
+        filename: `Declaracao_${activeDeclaration.number}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      try {
+        // @ts-ignore
+        pdfBase64 = await html2pdf().set(opt).from(element).output('datauristring');
+      } catch (pdfErr) {
+        console.error('Error generating PDF for resend:', pdfErr);
+      }
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/declarations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-username': currentUsername || 'admin'
+        },
+        body: JSON.stringify({ ...activeDeclaration, pdfBase64 })
+      });
+
+      if (response.ok) {
+        showNotification('Sucesso', 'E-mail reenviado com sucesso!', 'success');
+      } else {
+        showNotification('Erro', 'Falha ao reenviar e-mail.', 'error');
+      }
+    } catch (error) {
+      console.error('Error resending email:', error);
+      showNotification('Erro', 'Houve um problema ao reenviar o documento.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEdit = () => {
+    setView('edit');
+  };
 
   return (
     <>
@@ -643,16 +694,23 @@ const App: React.FC = () => {
                   <div id="declaration-content" className="bg-white shadow-2xl border border-zinc-100 print:border-none print:shadow-none min-h-[29.7cm] rounded-sm transform origin-top md:scale-[0.9] lg:scale-100 transition-transform">
                     <DeclarationPreview
                       declaration={activeDeclaration}
-                      onSignatureClick={(type) => setSigModal({ open: true, type })}
                     />
                   </div>
 
                   {/* Floating Action Buttons */}
                   <div className="no-print fixed bottom-10 right-10 flex flex-col gap-3 z-50">
+                    {userRole === 'master' && (
+                      <ActionButton
+                        icon={<EditIcon className="w-5 h-5" />}
+                        onClick={handleEdit}
+                        title="Editar Declaração"
+                        variant="secondary"
+                      />
+                    )}
                     <ActionButton
-                      icon={<SaveIcon className="w-5 h-5" />}
-                      onClick={handleSaveManual}
-                      title="Salvar no Histórico"
+                      icon={<MailIcon className="w-5 h-5" />}
+                      onClick={handleResendEmail}
+                      title="Enviar por E-mail"
                       variant="secondary"
                     />
                     <ActionButton

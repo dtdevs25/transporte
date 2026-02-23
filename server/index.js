@@ -181,10 +181,12 @@ app.post('/api/declarations', async (req, res) => {
 
         // Notification Email
         try {
+            console.log(`Iniciando processo de e-mail para usuário: ${usernameForLog}`);
             const userResult = await pool.query('SELECT email FROM users WHERE username = $1', [usernameForLog]);
             const userEmail = userResult.rows[0]?.email;
 
             if (userEmail) {
+                console.log(`E-mail do usuário encontrado: ${userEmail}`);
                 const emailHtml = `
                     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
                         <div style="background: #000; color: #fff; padding: 30px; text-align: center;">
@@ -219,6 +221,7 @@ app.post('/api/declarations', async (req, res) => {
                 };
 
                 if (pdfBase64) {
+                    console.log('Anexando PDF em Base64...');
                     mailOptions.attachments = [
                         {
                             filename: `Declaracao_${number}.pdf`,
@@ -228,11 +231,19 @@ app.post('/api/declarations', async (req, res) => {
                     ];
                 }
 
-                await transporter.sendMail(mailOptions);
-                console.log(`Email enviado para ${userEmail} com anexo: ${!!pdfBase64}`);
+                const info = await transporter.sendMail(mailOptions);
+                console.log(`Email enviado com sucesso! MessageID: ${info.messageId}`);
+                console.log(`Destinatário: ${userEmail}`);
+            } else {
+                console.warn(`Aviso: Usuário ${usernameForLog} não possui e-mail cadastrado.`);
             }
         } catch (mailErr) {
-            console.error('Erro ao processar envio de email:', mailErr);
+            console.error('ERRO FATAL NO ENVIO DE E-MAIL:', mailErr);
+            console.error('Configuração SMTP usada:', {
+                host: process.env.SMTP_HOST || 'srv-captain--mailserver',
+                port: process.env.SMTP_PORT || '587',
+                user: process.env.SMTP_USER || 'contato@ehspro.com.br'
+            });
         }
 
         res.status(201).json({ success: true });
