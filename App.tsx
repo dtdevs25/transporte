@@ -73,7 +73,7 @@ const INITIAL_EQUIPMENT: Equipment[] = [
   { description: '', model: '', serialNumber: '', unitValue: 0 }
 ];
 
-type ViewState = 'edit' | 'preview' | 'consultation' | 'signature-mode' | 'users' | 'logs';
+type ViewState = 'edit' | 'preview' | 'consultation' | 'signature-mode' | 'users' | 'logs' | 'forgot-password' | 'reset-password';
 
 const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:3000/api' : '/api';
 
@@ -93,6 +93,9 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isSmartModalOpen, setIsSmartModalOpen] = useState(false);
+  const [resetToken, setResetToken] = useState<string | null>(null);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [newPassword, setNewPassword] = useState({ pass: '', confirm: '' });
 
   // Notification Modal State
   const [notification, setNotification] = useState<{
@@ -250,6 +253,19 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const viewParam = params.get('view');
+
+    if (token && viewParam === 'reset-password') {
+      setResetToken(token);
+      setView('reset-password');
+      // Clean URL without refresh
+      window.history.replaceState({}, document.title, "/");
+    }
+  }, []);
+
+  useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash;
       if (hash.startsWith('#/sign/')) {
@@ -268,6 +284,63 @@ const App: React.FC = () => {
     window.addEventListener('hashchange', handleHash);
     return () => window.removeEventListener('hashchange', handleHash);
   }, [history]);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail })
+      });
+      if (response.ok) {
+        showNotification('Sucesso', 'E-mail de redefinição enviado com sucesso!', 'success');
+        setView('edit'); // Back to login view (which is default)
+      } else {
+        const data = await response.json();
+        showNotification('Erro', data.error || 'Falha ao enviar e-mail.', 'error');
+      }
+    } catch (err) {
+      showNotification('Erro', 'Erro ao conectar ao servidor.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.pass !== newPassword.confirm) {
+      showNotification('Erro', 'As senhas não coincidem.', 'error');
+      return;
+    }
+    if (newPassword.pass.length < 6) {
+      showNotification('Erro', 'A senha deve ter pelo menos 6 caracteres.', 'error');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: resetToken, newPassword: newPassword.pass })
+      });
+      if (response.ok) {
+        showNotification('Sucesso', 'Senha redefinida com sucesso!', 'success');
+        setResetToken(null);
+        setNewPassword({ pass: '', confirm: '' });
+        setView('edit');
+      } else {
+        const data = await response.json();
+        showNotification('Erro', data.error || 'Token inválido ou expirado.', 'error');
+      }
+    } catch (err) {
+      showNotification('Erro', 'Erro ao conectar ao servidor.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -511,59 +584,147 @@ const App: React.FC = () => {
                  <img src="/LOGOS/LogoPrincipal.png" alt="DNIGen" className="h-24 w-auto mb-4" />
               </header>
 
-              <form className="space-y-6 relative" onSubmit={handleLogin}>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">Usuário ou E-mail</label>
-                  <div className="relative">
-                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                    <input
-                      type="text"
-                      required
-                      value={loginForm.username}
-                      onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
-                      className="w-full pl-12 pr-4 py-3.5 bg-zinc-50 border border-zinc-200 rounded-2xl text-zinc-900 text-sm outline-none focus:ring-1 focus:ring-zinc-400 focus:border-zinc-400 transition-all font-medium"
-                      placeholder="Username ou E-mail"
-                    />
+              {view === 'forgot-password' ? (
+                <form className="space-y-6 relative" onSubmit={handleForgotPassword}>
+                  <div className="space-y-4 text-center mb-6">
+                    <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest">Recuperar Senha</h3>
+                    <p className="text-[11px] text-zinc-500 font-medium">Insira seu e-mail cadastrado para receber o link de redefinição.</p>
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">Senha</label>
-                  <div className="relative">
-                    <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      required
-                      value={loginForm.password}
-                      onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                      className="w-full pl-12 pr-12 py-3.5 bg-zinc-50 border border-zinc-200 rounded-2xl text-zinc-900 text-sm outline-none focus:ring-1 focus:ring-zinc-400 focus:border-zinc-400 transition-all font-medium"
-                      placeholder="••••••••"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
-                    >
-                      {showPassword ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
-                    </button>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">E-mail</label>
+                    <div className="relative">
+                      <MailIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                      <input
+                        type="email"
+                        required
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3.5 bg-zinc-50 border border-zinc-200 rounded-2xl text-zinc-900 text-sm outline-none focus:ring-1 focus:ring-zinc-400 focus:border-zinc-400 transition-all font-medium"
+                        placeholder="seu@email.com"
+                      />
+                    </div>
                   </div>
-                </div>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-4 bg-zinc-900 hover:bg-zinc-800 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl transition-all disabled:opacity-50"
+                  >
+                    {isLoading ? 'Enviando...' : 'Enviar Link'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setView('edit')}
+                    className="w-full text-[10px] font-black text-zinc-400 uppercase tracking-widest hover:text-zinc-600 transition-colors"
+                  >
+                    Voltar para Login
+                  </button>
+                </form>
+              ) : view === 'reset-password' ? (
+                <form className="space-y-6 relative" onSubmit={handleResetPassword}>
+                  <div className="space-y-4 text-center mb-6">
+                    <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest">Nova Senha</h3>
+                    <p className="text-[11px] text-zinc-500 font-medium">Defina sua nova senha de acesso.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">Nova Senha</label>
+                    <div className="relative">
+                      <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                      <input
+                        type="password"
+                        required
+                        value={newPassword.pass}
+                        onChange={(e) => setNewPassword({ ...newPassword, pass: e.target.value })}
+                        className="w-full pl-12 pr-4 py-3.5 bg-zinc-50 border border-zinc-200 rounded-2xl text-zinc-900 text-sm outline-none focus:ring-1 focus:ring-zinc-400 focus:border-zinc-400 transition-all font-medium"
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">Confirmar Senha</label>
+                    <div className="relative">
+                      <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                      <input
+                        type="password"
+                        required
+                        value={newPassword.confirm}
+                        onChange={(e) => setNewPassword({ ...newPassword, confirm: e.target.value })}
+                        className="w-full pl-12 pr-4 py-3.5 bg-zinc-50 border border-zinc-200 rounded-2xl text-zinc-900 text-sm outline-none focus:ring-1 focus:ring-zinc-400 focus:border-zinc-400 transition-all font-medium"
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-4 bg-zinc-900 hover:bg-zinc-800 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl transition-all disabled:opacity-50"
+                  >
+                    {isLoading ? 'Salvando...' : 'Salvar Nova Senha'}
+                  </button>
+                </form>
+              ) : (
+                <form className="space-y-6 relative" onSubmit={handleLogin}>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">Usuário ou E-mail</label>
+                    <div className="relative">
+                      <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                      <input
+                        type="text"
+                        required
+                        value={loginForm.username}
+                        onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                        className="w-full pl-12 pr-4 py-3.5 bg-zinc-50 border border-zinc-200 rounded-2xl text-zinc-900 text-sm outline-none focus:ring-1 focus:ring-zinc-400 focus:border-zinc-400 transition-all font-medium"
+                        placeholder="Username ou E-mail"
+                      />
+                    </div>
+                  </div>
 
-                {loginError && (
-                  <p className="text-red-500 text-[10px] font-black uppercase tracking-tight text-center bg-red-50 py-2 rounded-lg border border-red-100">
-                    {loginError}
-                  </p>
-                )}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center px-1">
+                      <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Senha</label>
+                      <button
+                        type="button"
+                        onClick={() => setView('forgot-password')}
+                        className="text-[9px] font-black text-[#0078d4] uppercase tracking-widest hover:underline"
+                      >
+                        Esqueci a senha
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={loginForm.password}
+                        onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                        className="w-full pl-12 pr-12 py-3.5 bg-zinc-50 border border-zinc-200 rounded-2xl text-zinc-900 text-sm outline-none focus:ring-1 focus:ring-zinc-400 focus:border-zinc-400 transition-all font-medium"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                      >
+                        {showPassword ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full group flex items-center justify-center gap-3 py-4 bg-zinc-900 hover:bg-zinc-800 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-zinc-900/10 transition-all active:scale-[0.98] disabled:opacity-50"
-                >
-                  {isLoading ? 'Autenticando...' : 'Entrar no Sistema'}
-                  <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </form>
+                  {loginError && (
+                    <p className="text-red-500 text-[10px] font-black uppercase tracking-tight text-center bg-red-50 py-2 rounded-lg border border-red-100">
+                      {loginError}
+                    </p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full group flex items-center justify-center gap-3 py-4 bg-zinc-900 hover:bg-zinc-800 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-zinc-900/10 transition-all active:scale-[0.98] disabled:opacity-50"
+                  >
+                    {isLoading ? 'Autenticando...' : 'Entrar no Sistema'}
+                    <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </form>
+              )}
 
               <footer className="mt-10 text-center">
                 <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-tighter">© 2026 CTDI do Brasil Ltda.</p>
