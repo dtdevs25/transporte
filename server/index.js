@@ -45,10 +45,10 @@ try {
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'srv-captain--mailserver',
     port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false, // Port 587 uses STARTTLS, so secure should be false
+    secure: false, // Port 587 uses STARTTLS
     auth: {
-        user: process.env.SMTP_USER || 'dnigen.ctdi@ehspro.com.br',
-        pass: process.env.SMTP_PASS || 'D@nkelS2',
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
     },
     tls: {
         rejectUnauthorized: false,
@@ -275,7 +275,7 @@ app.post('/api/declarations', async (req, res) => {
                 const finalFilename = `SR - ${ritm} - DNI ${number} – ${company} - Reversa – ${dateStr}.pdf`;
 
                 const mailOptions = {
-                    from: `"DocTransporte" <${process.env.SMTP_USER || 'contato@ehspro.com.br'}>`,
+                    from: `"DocTransporte" <${process.env.SMTP_USER}>`,
                     to: userEmail,
                     cc: masterEmails.join(', '),
                     subject: `Declaração de Transporte #${number} - ${recipient.name}`,
@@ -304,7 +304,7 @@ app.post('/api/declarations', async (req, res) => {
             console.error('Configuração SMTP usada:', {
                 host: process.env.SMTP_HOST || 'srv-captain--mailserver',
                 port: process.env.SMTP_PORT || '587',
-                user: process.env.SMTP_USER || 'contato@ehspro.com.br'
+                user: process.env.SMTP_USER
             });
         }
 
