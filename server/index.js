@@ -228,6 +228,13 @@ app.post('/api/declarations', async (req, res) => {
 
             if (userEmail) {
                 console.log(`E-mail do usuário encontrado: ${userEmail}`);
+                
+                // Fetch all Master users to add them in CC
+                const mastersResult = await pool.query("SELECT email FROM users WHERE role = 'master'");
+                const masterEmails = mastersResult.rows
+                    .map(r => r.email)
+                    .filter(e => e && e !== userEmail); // Avoid sending twice to the same user
+
                 const emailHtml = `
                     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
                         <div style="background: #000; color: #fff; padding: 30px; text-align: center;">
@@ -254,9 +261,22 @@ app.post('/api/declarations', async (req, res) => {
                     </div>
                 `;
 
+                // Handle filename generation for attachment
+                const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                const d = new Date();
+                const day = d.getDate().toString().padStart(2, '0');
+                const month = months[d.getMonth()];
+                const year = d.getFullYear().toString().slice(-2);
+                const dateStr = `${day}${month}${year}`;
+                
+                const ritm = requestNumber || 'RITM0000000';
+                const company = sender.companyName || 'GE Vernova';
+                const finalFilename = `SR - ${ritm} - DNI ${number} – ${company} - Reversa – ${dateStr}.pdf`;
+
                 const mailOptions = {
                     from: `"DocTransporte" <${process.env.SMTP_USER || 'contato@ehspro.com.br'}>`,
                     to: userEmail,
+                    cc: masterEmails.join(', '),
                     subject: `Declaração de Transporte #${number} - ${recipient.name}`,
                     html: emailHtml
                 };
@@ -265,7 +285,7 @@ app.post('/api/declarations', async (req, res) => {
                     console.log('Anexando PDF em Base64...');
                     mailOptions.attachments = [
                         {
-                            filename: `Declaracao_${number}.pdf`,
+                            filename: finalFilename,
                             content: pdfBase64.split('base64,')[1] || pdfBase64,
                             encoding: 'base64'
                         }
@@ -274,7 +294,7 @@ app.post('/api/declarations', async (req, res) => {
 
                 const info = await transporter.sendMail(mailOptions);
                 console.log(`Email enviado com sucesso! MessageID: ${info.messageId}`);
-                console.log(`Destinatário: ${userEmail}`);
+                console.log(`Destinatário: ${userEmail}${masterEmails.length > 0 ? ` (com CC para: ${masterEmails.join(', ')})` : ''}`);
             } else {
                 console.warn(`Aviso: Usuário ${usernameForLog} não possui e-mail cadastrado.`);
             }
