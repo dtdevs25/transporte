@@ -45,13 +45,14 @@ try {
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'srv-captain--mailserver',
     port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+    secure: false, // Port 587 uses STARTTLS, so secure should be false
     auth: {
-        user: process.env.SMTP_USER || 'contato@ehspro.com.br',
-        pass: process.env.SMTP_PASS || 'dankels2',
+        user: process.env.SMTP_USER || 'dnigen.ctdi@ehspro.com.br',
+        pass: process.env.SMTP_PASS || 'D@nkelS2',
     },
     tls: {
-        rejectUnauthorized: false
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1'
     }
 });
 

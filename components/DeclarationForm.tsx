@@ -238,9 +238,7 @@ export const DeclarationForm: React.FC<Props> = ({
   };
 
   const isStep3Valid = () => {
-    return (
-      carrier.collectionDate.length === 10
-    );
+    return true;
   };
 
   const isStep4Valid = () => {
