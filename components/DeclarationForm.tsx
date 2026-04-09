@@ -239,8 +239,6 @@ export const DeclarationForm: React.FC<Props> = ({
 
   const isStep3Valid = () => {
     return (
-      carrier.driverName.trim().length > 3 &&
-      carrier.rg.trim().length > 4 &&
       carrier.collectionDate.length === 10
     );
   };
