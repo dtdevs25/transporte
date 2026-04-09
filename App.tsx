@@ -577,7 +577,7 @@ const App: React.FC = () => {
       {!isAuthenticated ? (
         <div className="h-screen flex items-center justify-center bg-zinc-100 p-6">
           <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700">
-            <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden group">
+            <div className={`bg-white border border-zinc-200 rounded-[2.5rem] ${view === 'reset-password' ? 'p-6' : 'p-10'} shadow-2xl relative overflow-hidden group`}>
               <div className="absolute -top-24 -right-24 w-48 h-48 bg-zinc-100 rounded-full blur-3xl group-hover:bg-zinc-200 transition-colors"></div>
 
               <header className="mb-10 text-center flex flex-col items-center">
@@ -620,12 +620,11 @@ const App: React.FC = () => {
                   </button>
                 </form>
               ) : view === 'reset-password' ? (
-                <form className="space-y-6 relative" onSubmit={handleResetPassword}>
-                  <div className="space-y-4 text-center mb-6">
-                    <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest">Nova Senha</h3>
-                    <p className="text-[11px] text-zinc-500 font-medium">Defina sua nova senha de acesso.</p>
+                <form className="space-y-4 relative" onSubmit={handleResetPassword}>
+                  <div className="space-y-1 text-center mb-4">
+                    <p className="text-[11px] text-zinc-500 font-medium tracking-tight">Crie sua nova senha de acesso abaixo:</p>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">Nova Senha</label>
                     <div className="relative">
                       <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
@@ -634,13 +633,13 @@ const App: React.FC = () => {
                         required
                         value={newPassword.pass}
                         onChange={(e) => setNewPassword({ ...newPassword, pass: e.target.value })}
-                        className="w-full pl-12 pr-4 py-3.5 bg-zinc-50 border border-zinc-200 rounded-2xl text-zinc-900 text-sm outline-none focus:ring-1 focus:ring-zinc-400 focus:border-zinc-400 transition-all font-medium"
+                        className="w-full pl-11 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 text-sm outline-none focus:ring-1 focus:ring-zinc-400 transition-all font-medium"
                         placeholder="••••••••"
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">Confirmar Senha</label>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">Confirmar</label>
                     <div className="relative">
                       <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                       <input
@@ -648,7 +647,7 @@ const App: React.FC = () => {
                         required
                         value={newPassword.confirm}
                         onChange={(e) => setNewPassword({ ...newPassword, confirm: e.target.value })}
-                        className="w-full pl-12 pr-4 py-3.5 bg-zinc-50 border border-zinc-200 rounded-2xl text-zinc-900 text-sm outline-none focus:ring-1 focus:ring-zinc-400 focus:border-zinc-400 transition-all font-medium"
+                        className="w-full pl-11 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 text-sm outline-none focus:ring-1 focus:ring-zinc-400 transition-all font-medium"
                         placeholder="••••••••"
                       />
                     </div>
@@ -656,7 +655,7 @@ const App: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-4 bg-zinc-900 hover:bg-zinc-800 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl transition-all disabled:opacity-50"
+                    className="w-full py-3.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg transition-all disabled:opacity-50 mt-2"
                   >
                     {isLoading ? 'Salvando...' : 'Salvar Nova Senha'}
                   </button>
@@ -679,16 +678,7 @@ const App: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <div className="flex justify-between items-center px-1">
-                      <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Senha</label>
-                      <button
-                        type="button"
-                        onClick={() => setView('forgot-password')}
-                        className="text-[9px] font-black text-[#0078d4] uppercase tracking-widest hover:underline"
-                      >
-                        Esqueci a senha
-                      </button>
-                    </div>
+                    <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">Senha</label>
                     <div className="relative">
                       <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                       <input
@@ -705,6 +695,15 @@ const App: React.FC = () => {
                         className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
                       >
                         {showPassword ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <div className="flex justify-start px-1 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setView('forgot-password')}
+                        className="text-[9px] font-black text-[#0078d4] uppercase tracking-widest hover:underline"
+                      >
+                        Esqueci a senha
                       </button>
                     </div>
                   </div>
@@ -726,9 +725,7 @@ const App: React.FC = () => {
                 </form>
               )}
 
-              <footer className="mt-10 text-center">
-                <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-tighter">© 2026 CTDI do Brasil Ltda.</p>
-              </footer>
+              <div className="mt-6" />
             </div>
           </div>
         </div>

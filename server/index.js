@@ -463,7 +463,8 @@ app.post('/api/users', async (req, res) => {
         const emailHtml = `
             <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff; color: #1a202c;">
                 <div style="padding: 25px 0; text-align: center; background: #f8fafc;">
-                    <h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 800;">Bem-vindo ao DNIGen</h2>
+                    <img src="cid:logo" alt="DNIGen" style="height: 45px; width: auto; margin-bottom: 10px;">
+                    <h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 800;">Bem-vindo</h2>
                 </div>
                 <div style="padding: 30px; text-align: center;">
                     <p style="font-size: 14px; color: #475569;">Olá <strong>${escapeHtml(username)}</strong>, sua conta foi criada com sucesso.</p>
@@ -474,11 +475,27 @@ app.post('/api/users', async (req, res) => {
             </div>
         `;
 
+        // Resolve logo path
+        let logoPath = path.join(__dirname, '../public/LOGOS/LogoPrincipal.png');
+        if (process.env.NODE_ENV === 'production') {
+            logoPath = path.join(__dirname, '../dist/LOGOS/LogoPrincipal.png');
+        }
+
+        const attachments = [];
+        if (fs.existsSync(logoPath)) {
+            attachments.push({
+                filename: 'logo.png',
+                path: logoPath,
+                cid: 'logo'
+            });
+        }
+
         await transporter.sendMail({
             from: `"DNIGen" <${process.env.SMTP_USER}>`,
             to: email,
             subject: 'Bem-vindo ao DNIGen - Defina sua Senha',
-            html: emailHtml
+            html: emailHtml,
+            attachments: attachments
         });
 
         await createLog(adminUsername, 'CREATE', 'USER', username, `Criou usuário ${username} (${role}) e enviou convite para ${email}`);
