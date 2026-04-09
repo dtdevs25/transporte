@@ -66,7 +66,7 @@ const INITIAL_CARRIER: CarrierData = {
   driverName: '',
   rg: '',
   collectionDate: new Date().toISOString().split('T')[0],
-  companyName: '',
+  companyName: 'Wikilog',
 };
 
 const INITIAL_EQUIPMENT: Equipment[] = [

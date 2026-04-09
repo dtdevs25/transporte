@@ -22,12 +22,15 @@ interface Props {
   recipient: RecipientData;
   carrier: CarrierData;
   equipment: Equipment[];
+  requestNumber?: string;
+  employeeEmail?: string;
   onUpdate: (data: Partial<{
     sender: SenderData;
     recipient: RecipientData;
     carrier: CarrierData;
     equipment: Equipment[];
     requestNumber: string;
+    employeeEmail: string;
   }>) => void;
   onGenerate: () => void;
   onPrint?: () => void;
@@ -42,6 +45,8 @@ export const DeclarationForm: React.FC<Props> = ({
   recipient,
   carrier,
   equipment,
+  requestNumber,
+  employeeEmail,
   onUpdate,
   onGenerate,
   onPrint,
@@ -210,6 +215,8 @@ export const DeclarationForm: React.FC<Props> = ({
       (sender.cnpj && sender.cnpj.replace(/\D/g, '').length === 14);
 
     return (
+      requestNumber && requestNumber.trim().length > 5 &&
+      employeeEmail && employeeEmail.trim().length > 5 &&
       sender.name.trim().length > 3 &&
       hasCpfOrCnpj &&
       sender.address.trim().length > 5 &&
@@ -225,7 +232,6 @@ export const DeclarationForm: React.FC<Props> = ({
   const isStep2Valid = () => {
     return equipment.length > 0 && equipment.every(item =>
       item.description.trim().length > 2 &&
-      item.model.trim().length > 1 &&
       item.serialNumber.trim().length > 0 &&
       item.unitValue > 0
     );
@@ -335,6 +341,8 @@ export const DeclarationForm: React.FC<Props> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <FormField label="Nº Chamado (RITM) *" value={requestNumber || ''} onChange={(v) => onUpdate({ requestNumber: v })} placeholder="RITM0000000" />
+              <FormField label="E-mail Solicitante *" value={employeeEmail || ''} onChange={(v) => onUpdate({ employeeEmail: v })} placeholder="usuario@ctdi.com" />
               <div className="lg:col-span-2">
                 <FormField label="Nome Completo *" value={sender.name} onChange={(v) => onUpdate({ sender: { ...sender, name: v } })} />
               </div>

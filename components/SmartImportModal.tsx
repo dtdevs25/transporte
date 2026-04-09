@@ -186,7 +186,7 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
         if (serialNum) {
             items.push({
                 description: 'EQUIPAMENTO EM RECLAME',
-                model: 'CONFIRME O MODELO',
+                model: '',
                 serialNumber: serialNum,
                 unitValue: 0
             });
