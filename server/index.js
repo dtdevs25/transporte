@@ -330,7 +330,9 @@ app.post('/api/declarations', async (req, res) => {
                     to: userEmail,
                     cc: masterEmails.join(', '),
                     subject: `Declaração de Transporte #${number} - ${recipient.name}`,
+                    text: `Olá ${usernameForLog}, uma nova declaração de transporte foi gerada (#${number}).\n\nRITM: ${ritm}\nEmpresa: ${company}\nDestinatário: ${recipient.name}\n\nO PDF está em anexo.`,
                     html: emailHtml,
+                    priority: 'high',
                     attachments: attachments
                 };
 
