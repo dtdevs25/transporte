@@ -679,6 +679,8 @@ const App: React.FC = () => {
                       carrier={activeDeclaration?.carrier || INITIAL_CARRIER}
                       equipment={activeDeclaration?.equipment || INITIAL_EQUIPMENT}
                       onUpdate={handleUpdate}
+                      requestNumber={activeDeclaration?.requestNumber}
+                      employeeEmail={activeDeclaration?.employeeEmail}
                       onGenerate={() => handleGenerate(activeDeclaration!)}
                       showNotification={showNotification}
                       onOpenSmartImport={() => setIsSmartModalOpen(true)}
