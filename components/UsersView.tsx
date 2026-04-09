@@ -151,81 +151,69 @@ export const UsersView: React.FC<Props> = ({ apiUrl, showNotification }) => {
 
             {/* Modal de Cadastro */}
             {showForm && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm" onClick={() => setShowForm(false)} />
-                    <div className="relative bg-white w-full max-w-lg rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in-95 duration-200">
-                        <header className="flex justify-between items-center mb-8">
+                <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 overflow-y-auto">
+                    <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-sm" onClick={() => setShowForm(false)} />
+                    <div className="relative bg-white w-full max-w-sm rounded-[2rem] p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <header className="flex justify-between items-center mb-6">
                             <div>
-                                <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tight">
+                                <h3 className="text-lg font-black text-zinc-900 uppercase tracking-tight">
                                     {editingUserId ? 'Editar Usuário' : 'Novo Usuário'}
                                 </h3>
-                                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1">Informações de acesso</p>
+                                <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">Acesso ao sistema</p>
                             </div>
-                            <button onClick={() => setShowForm(false)} className="p-2 hover:bg-zinc-100 rounded-full transition-colors">
-                                <XIcon className="w-6 h-6 text-zinc-400" />
+                            <button onClick={() => setShowForm(false)} className="p-1.5 hover:bg-zinc-100 rounded-full transition-colors">
+                                <XIcon className="w-5 h-5 text-zinc-400" />
                             </button>
                         </header>
 
-                        <form onSubmit={handleCreateUser} className="space-y-6">
-                            <div className="grid grid-cols-1 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Usuário</label>
+                        <form onSubmit={handleCreateUser} className="space-y-4">
+                            <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">Usuário</label>
                                     <input
                                         required
                                         type="text"
                                         value={newUser.username}
                                         onChange={e => setNewUser({ ...newUser, username: e.target.value })}
-                                        className="w-full px-5 py-3.5 bg-zinc-50 border border-zinc-100 rounded-2xl outline-none focus:ring-2 focus:ring-zinc-900 transition-all font-medium"
+                                        className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-100 rounded-xl outline-none focus:ring-2 focus:ring-zinc-900 transition-all text-sm font-medium"
                                         placeholder="Nome de identificação"
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">E-mail Corporativo</label>
+                                <div className="space-y-1.5">
+                                    <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">E-mail Corporativo</label>
                                     <input
                                         required
                                         type="email"
                                         value={newUser.email}
                                         onChange={e => setNewUser({ ...newUser, email: e.target.value })}
-                                        className="w-full px-5 py-3.5 bg-zinc-50 border border-zinc-200 rounded-2xl outline-none focus:ring-2 focus:ring-zinc-900 transition-all font-medium"
+                                        className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl outline-none focus:ring-2 focus:ring-zinc-900 transition-all text-sm font-medium"
                                         placeholder="usuario@ctdi.com"
                                     />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Acesso</label>
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">Acesso</label>
                                         <select
                                             value={newUser.role}
                                             onChange={e => setNewUser({ ...newUser, role: e.target.value as any })}
-                                            className="w-full px-5 py-3.5 bg-zinc-50 border border-zinc-100 rounded-2xl outline-none focus:ring-2 focus:ring-zinc-900 transition-all font-medium appearance-none"
+                                            className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-100 rounded-xl outline-none focus:ring-2 focus:ring-zinc-900 transition-all text-sm font-medium appearance-none"
                                         >
                                             <option value="user">Comum</option>
                                             <option value="master">Admin</option>
                                         </select>
                                     </div>
-                                    {editingUserId && (
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Senha (opc)</label>
-                                            <input
-                                                type="password"
-                                                value={newUser.password}
-                                                onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                                                className="w-full px-5 py-3.5 bg-zinc-50 border border-zinc-100 rounded-2xl outline-none focus:ring-2 focus:ring-zinc-900 transition-all font-medium"
-                                                placeholder="••••••••"
-                                            />
-                                        </div>
-                                    )}
                                 </div>
                             </div>
 
-                            {error && <p className="text-red-500 text-[10px] font-black uppercase text-center bg-red-50 py-2 rounded-xl">{error}</p>}
+                            {error && <p className="text-red-500 text-[9px] font-black uppercase text-center bg-red-50 py-1.5 rounded-lg">{error}</p>}
 
                             <button
                                 disabled={isSaving}
                                 type="submit"
-                                className="w-full py-4 bg-zinc-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-zinc-800 transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-xl shadow-zinc-200"
+                                className="w-full py-3.5 bg-zinc-900 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-zinc-800 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg mt-2"
                             >
                                 {isSaving ? <LoaderIcon className="w-4 h-4 animate-spin" /> : <ShieldIcon className="w-4 h-4" />}
-                                {editingUserId ? 'Salvar Alterações' : 'Criar Conta e Enviar Convite'}
+                                {editingUserId ? 'Salvar' : 'Criar e Enviar Convite'}
                             </button>
                         </form>
                     </div>
