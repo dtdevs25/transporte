@@ -759,6 +759,7 @@ const App: React.FC = () => {
 const SidebarItem: React.FC<{ icon: React.ReactNode; label: string; active: boolean; collapsed: boolean; onClick: () => void }> = ({ icon, label, active, collapsed, onClick }) => (
   <button
     onClick={onClick}
+    title={collapsed ? label : ''}
     className={`relative group w-full flex items-center transition-all ${collapsed ? 'justify-center p-3.5' : 'p-3 gap-3'} rounded-xl font-bold uppercase tracking-widest text-[10px] ${active ? 'bg-zinc-200 text-zinc-950 shadow-sm' : 'text-zinc-500 hover:bg-zinc-200/50 hover:text-zinc-900'}`}
   >
     <div className={`shrink-0 transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>{icon}</div>
