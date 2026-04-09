@@ -493,8 +493,7 @@ const App: React.FC = () => {
               <div className="absolute -top-24 -right-24 w-48 h-48 bg-zinc-100 rounded-full blur-3xl group-hover:bg-zinc-200 transition-colors"></div>
 
               <header className="mb-10 text-center flex flex-col items-center">
-                 <img src="/LOGOS/LogoPrincipal.png" alt="DNIGen" className="h-16 w-auto mb-4" />
-                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">Enterprise Solution</p>
+                 <img src="/LOGOS/LogoPrincipal.png" alt="DNIGen" className="h-24 w-auto mb-4" />
               </header>
 
               <form className="space-y-6 relative" onSubmit={handleLogin}>
