@@ -141,6 +141,21 @@ const App: React.FC = () => {
     setNotification({ isOpen: true, title, message, type, onConfirm });
   };
 
+  const generateFilename = (decl: Declaration) => {
+    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const d = new Date();
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = months[d.getMonth()];
+    const year = d.getFullYear().toString().slice(-2);
+    const dateStr = `${day}${month}${year}`;
+    
+    const ritm = decl.requestNumber || 'RITM0000000';
+    const num = decl.number;
+    const company = decl.sender.companyName || 'GE Vernova';
+    
+    return `SR - ${ritm} - DNI ${num} – ${company} - Reversa – ${dateStr}.pdf`;
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -151,7 +166,7 @@ const App: React.FC = () => {
 
     const opt = {
       margin: 0,
-      filename: `Declaracao_${activeDeclaration.number}.pdf`,
+      filename: generateFilename(activeDeclaration),
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, letterRendering: true },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -393,7 +408,7 @@ const App: React.FC = () => {
         if (element) {
           const opt = {
             margin: 0,
-            filename: activeDeclaration.requestNumber ? `${activeDeclaration.requestNumber}.pdf` : `Declaracao_${formattedNum}.pdf`,
+            filename: generateFilename(newDeclHost),
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true, letterRendering: true },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -443,7 +458,7 @@ const App: React.FC = () => {
     if (element) {
       const opt = {
         margin: 0,
-        filename: activeDeclaration.requestNumber ? `${activeDeclaration.requestNumber}.pdf` : `Declaracao_${activeDeclaration.number}.pdf`,
+        filename: generateFilename(activeDeclaration),
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, letterRendering: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
