@@ -4,24 +4,33 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gerador de Declaração Pro</title>
+    <title>DNIGen - Declaração de Transporte</title>
+    <link rel="icon" type="image/png" href="/LOGOS/LogoAba.png" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;500;600;700&display=swap');
       
       :root {
-        --zinc-50: #fafafa;
-        --zinc-100: #f4f4f5;
-        --zinc-200: #e4e4e7;
-        --zinc-800: #27272a;
-        --zinc-900: #18181b;
-        --zinc-950: #09090b;
+        --zinc-50: #f3f3f3;
+        --zinc-100: #ededed;
+        --zinc-200: #e5e5e5;
+        --zinc-300: #d1d1d1;
+        --zinc-400: #a1a1a1;
+        --zinc-500: #717171;
+        --zinc-600: #525252;
+        --zinc-700: #404040;
+        --zinc-800: #262626;
+        --zinc-900: #171717;
+        --zinc-950: #0a0a0a;
+        
+        --win-accent: #0078d4;
       }
 
       body {
-        font-family: 'Inter', sans-serif;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
         background-color: var(--zinc-50);
+        color: #1a1a1a;
         margin: 0;
         padding: 0;
         overflow-x: hidden;

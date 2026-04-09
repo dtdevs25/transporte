@@ -23,7 +23,10 @@ import {
   EyeOffIcon,
   ShieldIcon,
   ActivityIcon,
-  EditIcon
+  EditIcon,
+  ShieldCheckIcon,
+  UsersIcon,
+  Edit2Icon
 } from 'lucide-react';
 import { Declaration, Equipment, SenderData, CarrierData, RecipientData } from './types';
 import { DeclarationPreview } from './components/DeclarationPreview';
@@ -103,13 +106,7 @@ const App: React.FC = () => {
     type: 'info'
   });
 
-  const handleUpdate = (updatedData: Partial<{
-    sender: SenderData;
-    recipient: RecipientData;
-    carrier: CarrierData;
-    equipment: Equipment[];
-    requestNumber: string;
-  }>) => {
+  const handleUpdate = (updatedData: Partial<Declaration>) => {
     const current = activeDeclaration || {
       id: '',
       number: '',
@@ -122,15 +119,20 @@ const App: React.FC = () => {
       requestNumber: ''
     };
 
-    // Deep merge: for sender/carrier/recipient, merge fields instead of replacing the object
-    setActiveDeclaration({
-      ...current,
-      ...(updatedData.requestNumber !== undefined ? { requestNumber: updatedData.requestNumber } : {}),
-      ...(updatedData.sender ? { sender: { ...current.sender, ...updatedData.sender } } : {}),
-      ...(updatedData.recipient ? { recipient: { ...current.recipient, ...updatedData.recipient } } : {}),
-      ...(updatedData.carrier ? { carrier: { ...current.carrier, ...updatedData.carrier } } : {}),
-      ...(updatedData.equipment ? { equipment: updatedData.equipment } : {}),
+    const nextState = { ...current };
+
+    if (updatedData.sender) nextState.sender = { ...current.sender, ...updatedData.sender };
+    if (updatedData.recipient) nextState.recipient = { ...current.recipient, ...updatedData.recipient };
+    if (updatedData.carrier) nextState.carrier = { ...current.carrier, ...updatedData.carrier };
+    if (updatedData.equipment) nextState.equipment = updatedData.equipment;
+    
+    Object.keys(updatedData).forEach(key => {
+        if (!['sender', 'recipient', 'carrier', 'equipment'].includes(key)) {
+            (nextState as any)[key] = (updatedData as any)[key];
+        }
     });
+
+    setActiveDeclaration(nextState);
   };
 
   const showNotification = (title: string, message: string, type: NotificationType = 'info', onConfirm?: () => void) => {
@@ -172,7 +174,7 @@ const App: React.FC = () => {
 
       if (response.ok) {
         showNotification('Sucesso', 'Declaração salva com sucesso no histórico.', 'success');
-        fetchDeclarations(); // Refresh history
+        fetchDeclarations();
       } else {
         showNotification('Erro', 'Houve um problema ao salvar a declaração.', 'error');
       }
@@ -190,7 +192,6 @@ const App: React.FC = () => {
         const data = await response.json();
         setHistory(data);
         if (data.length > 0) {
-          // Get the highest number from history to sync the counter
           const numbers = data.map((d: any) => parseInt(d.number, 10)).filter((n: any) => !isNaN(n));
           if (numbers.length > 0) {
             const lastNum = Math.max(...numbers);
@@ -217,7 +218,6 @@ const App: React.FC = () => {
       if (role) {
         setUserRole(role);
       } else if (username) {
-        // Recover role from server if missing in session
         fetch(`${API_URL}/user-role/${username}`)
           .then(res => res.json())
           .then(data => {
@@ -367,15 +367,20 @@ const App: React.FC = () => {
       equipment: data.equipment || INITIAL_EQUIPMENT,
       sender: data.sender || INITIAL_SENDER,
       carrier: data.carrier || INITIAL_CARRIER,
+      requestNumber: data.requestNumber,
+      shipToAddressTo: data.shipToAddressTo,
+      employeeEmail: data.employeeEmail,
+      deliveryDate: data.deliveryDate,
+      requestType: data.requestType,
+      priority: data.priority,
+      legalHold: data.legalHold
     };
 
     setIsLoading(true);
     try {
-      // 1. First, show the preview so html2pdf can find the element
       setActiveDeclaration(newDeclHost);
       setView('preview');
 
-      // Wait a bit for React to render the preview content
       setTimeout(async () => {
         const element = document.getElementById('declaration-content');
         let pdfBase64 = null;
@@ -397,7 +402,6 @@ const App: React.FC = () => {
           }
         }
 
-        // 2. Send to backend with PDF anexo
         const response = await fetch(`${API_URL}/declarations`, {
           method: 'POST',
           headers: {
@@ -478,47 +482,48 @@ const App: React.FC = () => {
   return (
     <>
       {!isAuthenticated ? (
-        <div className="h-screen flex items-center justify-center bg-zinc-950 p-6">
+        <div className="h-screen flex items-center justify-center bg-zinc-100 p-6">
           <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden group">
-              <div className="absolute -top-24 -right-24 w-48 h-48 bg-zinc-100/5 rounded-full blur-3xl group-hover:bg-zinc-100/10 transition-colors"></div>
+            <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden group">
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-zinc-100 rounded-full blur-3xl group-hover:bg-zinc-200 transition-colors"></div>
 
               <header className="mb-10 text-center flex flex-col items-center">
-                <img src="/LOGO_LOGIN.png" alt="Logo Transporte Fácil" className="w-full max-w-[182px] h-auto mb-2 object-contain" />
+                 <img src="/LOGOS/LogoPrincipal.png" alt="DNIGen" className="h-16 w-auto mb-4" />
+                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">Enterprise Solution</p>
               </header>
 
-              <form onSubmit={handleLogin} className="space-y-6">
+              <form className="space-y-6 relative" onSubmit={handleLogin}>
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Usuário ou E-mail</label>
+                  <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">Usuário ou E-mail</label>
                   <div className="relative">
-                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                     <input
                       type="text"
                       required
                       value={loginForm.username}
                       onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
-                      className="w-full pl-12 pr-4 py-3.5 bg-zinc-950 border border-zinc-800 rounded-2xl text-white text-sm outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-600 transition-all font-medium"
-                      placeholder="Username ou dsantos@ctdi.com"
+                      className="w-full pl-12 pr-4 py-3.5 bg-zinc-50 border border-zinc-200 rounded-2xl text-zinc-900 text-sm outline-none focus:ring-1 focus:ring-zinc-400 focus:border-zinc-400 transition-all font-medium"
+                      placeholder="Username ou E-mail"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Senha</label>
+                  <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">Senha</label>
                   <div className="relative">
-                    <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                    <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                     <input
                       type={showPassword ? "text" : "password"}
                       required
                       value={loginForm.password}
                       onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                      className="w-full pl-12 pr-12 py-3.5 bg-zinc-950 border border-zinc-800 rounded-2xl text-white text-sm outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-600 transition-all font-medium"
+                      className="w-full pl-12 pr-12 py-3.5 bg-zinc-50 border border-zinc-200 rounded-2xl text-zinc-900 text-sm outline-none focus:ring-1 focus:ring-zinc-400 focus:border-zinc-400 transition-all font-medium"
                       placeholder="••••••••"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
                     >
                       {showPassword ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
                     </button>
@@ -526,7 +531,7 @@ const App: React.FC = () => {
                 </div>
 
                 {loginError && (
-                  <p className="text-red-500 text-[10px] font-black uppercase tracking-tight text-center bg-red-500/10 py-2 rounded-lg border border-red-500/20">
+                  <p className="text-red-500 text-[10px] font-black uppercase tracking-tight text-center bg-red-50 py-2 rounded-lg border border-red-100">
                     {loginError}
                   </p>
                 )}
@@ -534,7 +539,7 @@ const App: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full group flex items-center justify-center gap-3 py-4 bg-zinc-100 hover:bg-white text-zinc-950 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-white/5 transition-all active:scale-[0.98] disabled:opacity-50"
+                  className="w-full group flex items-center justify-center gap-3 py-4 bg-zinc-900 hover:bg-zinc-800 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-zinc-900/10 transition-all active:scale-[0.98] disabled:opacity-50"
                 >
                   {isLoading ? 'Autenticando...' : 'Entrar no Sistema'}
                   <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -542,199 +547,205 @@ const App: React.FC = () => {
               </form>
 
               <footer className="mt-10 text-center">
-                <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-tighter">© 2026 CTDI do Brasil Ltda.</p>
+                <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-tighter">© 2026 CTDI do Brasil Ltda.</p>
               </footer>
             </div>
           </div>
         </div>
       ) : (
-        <div className="h-screen flex bg-zinc-50 overflow-hidden">
-          <aside
-            className={`no-print h-full bg-zinc-950 text-zinc-100 transition-sidebar flex flex-col z-40 border-r border-zinc-800 shrink-0 overflow-hidden ${isMenuCollapsed ? 'w-20' : 'w-64'}`}
-          >
-            <div className={`flex items-center border-b border-zinc-900/50 h-16 shrink-0 px-4 ${isMenuCollapsed ? 'justify-center' : 'justify-between'}`}>
-              <div className="flex items-center justify-center w-full h-full overflow-hidden">
-                <img
-                  src={isMenuCollapsed ? "/LOGO_MENU_FECHADO.png" : "/LOGO_MENU_ABERTO.png"}
-                  alt="Logo"
-                  className={`h-auto transition-all duration-300 ${isMenuCollapsed ? 'w-10' : 'w-48'}`}
-                />
+        <div className="h-screen flex flex-col bg-zinc-50 overflow-hidden font-['Segoe_UI']">
+          {/* Header Superior Fixo Lateral-a-Lateral */}
+          <header className="no-print h-20 bg-white border-b border-zinc-200 flex items-center justify-between px-8 z-50 shrink-0 shadow-sm">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4">
+                 <img src="/LOGOS/LogoPrincipal.png" alt="DNIGen" className="h-10 w-auto" />
+                 <div className="h-8 w-px bg-zinc-200 hidden md:block"></div>
+                 <div className="hidden md:block">
+                    <h1 className="text-lg font-black tracking-tight text-zinc-900 leading-none">DNIGen</h1>
+                    <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-1">Declaração de Transporte</p>
+                 </div>
               </div>
+              <button
+                onClick={() => setIsMenuCollapsed(!isMenuCollapsed)}
+                className="p-2 hover:bg-zinc-100 rounded-xl text-zinc-400 transition-colors"
+              >
+                <MenuIcon size={20} />
+              </button>
             </div>
 
-            <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto overflow-x-hidden custom-scrollbar">
-              <SidebarItem
-                icon={<PlusIcon className="w-5 h-5" />}
-                label="Novo Documento"
-                active={view === 'edit'}
-                collapsed={isMenuCollapsed}
-                onClick={() => { setView('edit'); setActiveDeclaration(null); }}
-              />
-              <SidebarItem
-                icon={<SearchIcon className="w-5 h-5" />}
-                label="Histórico"
-                active={view === 'consultation'}
-                collapsed={isMenuCollapsed}
-                onClick={() => setView('consultation')}
-              />
-              {userRole === 'master' && (
-                <>
-                  <SidebarItem
-                    icon={<UserIcon className="w-5 h-5" />}
-                    label="Usuários"
-                    active={view === 'users'}
-                    collapsed={isMenuCollapsed}
-                    onClick={() => setView('users')}
-                  />
-                  <SidebarItem
-                    icon={<ShieldIcon className="w-5 h-5" />}
-                    label="Logs"
-                    active={view === 'logs'}
-                    collapsed={isMenuCollapsed}
-                    onClick={() => setView('logs')}
-                  />
-                </>
-              )}
-
-              <div className={`mt-6 pt-5 border-t border-zinc-900/50`}>
-                {!isMenuCollapsed && (
-                  <div className="px-3 mb-3 flex items-center gap-2 text-zinc-600 uppercase text-[9px] font-black tracking-widest whitespace-nowrap">
-                    Recentes
-                  </div>
-                )}
-                <div className="space-y-1">
-                  {history.slice(0, 5).map(item => (
-                    <button
-                      key={item.id}
-                      onClick={() => { setActiveDeclaration(item); setView('preview'); }}
-                      className={`relative group w-full flex items-center rounded-xl cursor-pointer transition-all ${isMenuCollapsed ? 'justify-center p-3' : 'p-2.5 gap-3'} ${activeDeclaration?.id === item.id ? 'bg-zinc-100 text-zinc-950 shadow-lg' : 'text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200'}`}
-                    >
-                      <HistoryIcon className="w-4 h-4 shrink-0 opacity-40" />
-                      {!isMenuCollapsed && (
-                        <div className="overflow-hidden text-left whitespace-nowrap">
-                          <div className="text-[11px] font-bold leading-none mb-1 truncate">#{item.number}</div>
-                          <div className="text-[9px] opacity-60 truncate uppercase font-bold">{item.sender.name}</div>
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
+            <div className="flex items-center gap-6">
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-zinc-50 rounded-full border border-zinc-200 shadow-sm">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-tight">Sistema Online</span>
               </div>
-            </nav>
-
-            <button
-              onClick={() => setIsMenuCollapsed(!isMenuCollapsed)}
-              className="p-4 border-t border-zinc-900 hover:bg-zinc-900 transition-colors flex items-center justify-center shrink-0 group overflow-hidden"
-            >
-              {isMenuCollapsed ? (
-                <ChevronRightIcon className="w-5 h-5 text-zinc-600 group-hover:text-white transition-colors" />
-              ) : (
-                <div className="flex items-center gap-3 w-full px-3">
-                  <div className="w-10 h-10 bg-zinc-950 text-white rounded-xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
-                    <UserIcon className="w-5 h-5" />
-                  </div>
-                  <div className="flex flex-col text-left overflow-hidden">
-                    <span className="text-[11px] font-black text-white tracking-widest uppercase truncate">{currentUsername || 'Usuário'}</span>
-                    <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">{userRole === 'master' ? 'Master / Admin' : 'Colaborador'}</span>
-                  </div>
+              
+              <div className="flex items-center gap-4 border-l border-zinc-100 pl-6">
+                <div className="text-right hidden sm:block">
+                   <p className="text-[11px] font-black text-zinc-900 tracking-widest uppercase leading-none">{currentUsername}</p>
+                   <p className="text-[9px] font-bold text-[#0078d4] uppercase tracking-widest mt-1">{userRole === 'master' ? 'Master / Admin' : 'Colaborador'}</p>
                 </div>
-              )}
-            </button>
-          </aside>
-
-          <div className="flex-1 flex flex-col min-w-0 bg-zinc-50 relative">
-            <header className="no-print sticky top-0 h-16 flex items-center justify-between px-6 bg-white/70 backdrop-blur-xl border-b border-zinc-200/50 z-30">
-              <div className="flex items-center gap-4">
-                <div className="text-[11px] text-zinc-900 font-black uppercase tracking-widest whitespace-nowrap">
-                  {view === 'edit' ? 'Novo Documento' : view === 'consultation' ? 'Histórico' : view === 'users' ? 'Gestão de Usuários' : view === 'logs' ? 'Logs do Sistema' : 'Preview'}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
                 <button
                   onClick={handleLogout}
-                  className="flex items-center justify-center w-9 h-9 bg-zinc-100 hover:bg-zinc-950 text-zinc-500 hover:text-white rounded-xl transition-all border border-zinc-200/50 group"
-                  title="Sair do Sistema"
+                  className="flex items-center justify-center w-10 h-10 bg-zinc-50 hover:bg-red-50 text-zinc-400 hover:text-red-500 rounded-xl transition-all border border-zinc-200 shadow-sm group"
+                  title="Sair"
                 >
-                  <LogOutIcon className="w-4 h-4" />
+                  <LogOutIcon className="w-4 h-4 transition-transform group-hover:scale-110" />
                 </button>
               </div>
-            </header>
+            </div>
+          </header>
 
-            <main className="flex-1 overflow-y-auto custom-scrollbar bg-zinc-50/50">
-              {view === 'edit' ? (
-                <div className="max-w-5xl mx-auto p-6 md:p-10 pb-20">
-                  <div className="bg-white rounded-[2rem] shadow-xl shadow-zinc-200/50 border border-zinc-200/60 overflow-hidden">
+          <div className="flex-1 flex overflow-hidden">
+            {/* Sidebar abaixo do Header */}
+            <aside
+              className={`no-print bg-white h-full transition-all duration-300 flex flex-col z-40 border-r border-zinc-200 shrink-0 overflow-hidden ${isMenuCollapsed ? 'w-20' : 'w-72'}`}
+            >
+              <nav className="flex-1 p-4 space-y-2 overflow-y-auto overflow-x-hidden custom-scrollbar mt-4">
+                <SidebarItem
+                  icon={<PlusIcon className="w-5 h-5" />}
+                  label="Nova Declaração"
+                  active={view === 'edit'}
+                  collapsed={isMenuCollapsed}
+                  onClick={() => { setView('edit'); setActiveDeclaration(null); }}
+                />
+                <SidebarItem
+                  icon={<SearchIcon className="w-5 h-5" />}
+                  label="Base de Dados"
+                  active={view === 'consultation'}
+                  collapsed={isMenuCollapsed}
+                  onClick={() => setView('consultation')}
+                />
+                {userRole === 'master' && (
+                  <>
+                    <div className={`pt-6 pb-2 px-4 ${isMenuCollapsed ? 'hidden' : 'block'}`}>
+                      <span className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">Administração</span>
+                    </div>
+                    <SidebarItem
+                      icon={<UserIcon className="w-5 h-5" />}
+                      label="Controle de Usuários"
+                      active={view === 'users'}
+                      collapsed={isMenuCollapsed}
+                      onClick={() => setView('users')}
+                    />
+                    <SidebarItem
+                      icon={<ShieldIcon className="w-5 h-5" />}
+                      label="Logs de Auditoria"
+                      active={view === 'logs'}
+                      collapsed={isMenuCollapsed}
+                      onClick={() => setView('logs')}
+                    />
+                  </>
+                )}
+
+                {!isMenuCollapsed && history.length > 0 && (
+                   <div className="mt-8 pt-6 border-t border-zinc-50">
+                      <div className="px-4 mb-3 text-zinc-400 uppercase text-[9px] font-black tracking-widest">Recentes</div>
+                      <div className="space-y-1 px-2">
+                        {history.slice(0, 3).map(item => (
+                          <button
+                            key={item.id}
+                            onClick={() => { setActiveDeclaration(item); setView('preview'); }}
+                            className="w-full p-2.5 rounded-xl text-left hover:bg-zinc-50 transition-all group flex items-center gap-3"
+                          >
+                            <HistoryIcon className="w-4 h-4 text-zinc-300" />
+                            <div className="min-w-0">
+                              <div className="text-[10px] font-black text-zinc-900 truncate tracking-tight">#{item.number}</div>
+                              <div className="text-[9px] text-zinc-400 truncate uppercase font-bold tracking-tighter">{item.sender.name}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                   </div>
+                )}
+              </nav>
+
+              <div className="p-4 border-t border-zinc-100 bg-zinc-50/50">
+                <p className={`text-[8px] font-black text-zinc-300 uppercase tracking-[0.2em] text-center ${isMenuCollapsed ? 'hidden' : 'block'}`}>
+                  DNIGen v2.0 Enterprise
+                </p>
+              </div>
+            </aside>
+
+            {/* Conteúdo Principal Unificado */}
+            <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#f8f9fa] p-8 pb-24">
+              <div className="max-w-[1400px] mx-auto">
+                <div className="mb-8 flex items-center justify-between no-print">
+                   <div className="text-[11px] text-zinc-500 font-bold uppercase tracking-[0.3em]">
+                      {view === 'edit' ? 'Painel de Emissão de Documentos' : 
+                       view === 'consultation' ? 'Diretório Digital de Declarações' : 
+                       view === 'users' ? 'Segurança e Controle de Acessos' : 
+                       view === 'logs' ? 'Registro Histórico de Auditoria' : 'Visualização do Documento'}
+                   </div>
+                </div>
+
+                {view === 'edit' ? (
+                  <div className="bg-white rounded-[2.5rem] shadow-xl shadow-zinc-200/40 border border-zinc-200 overflow-hidden">
                     <DeclarationForm
                       sender={activeDeclaration?.sender || INITIAL_SENDER}
                       recipient={activeDeclaration?.recipient || INITIAL_RECIPIENT}
                       carrier={activeDeclaration?.carrier || INITIAL_CARRIER}
                       equipment={activeDeclaration?.equipment || INITIAL_EQUIPMENT}
                       onUpdate={handleUpdate}
-                      onGenerate={() => handleGenerate(activeDeclaration || {})}
-                      onPrint={handlePrint}
-                      onDownload={handleDownloadPDF}
-                      onSaveManual={handleSaveManual}
+                      onGenerate={() => handleGenerate(activeDeclaration!)}
                       showNotification={showNotification}
                     />
                   </div>
-                </div>
-              ) : view === 'consultation' ? (
-                <div className="p-6 md:p-10 pb-20 max-w-6xl mx-auto w-full">
+                ) : view === 'consultation' ? (
                   <ConsultationView
                     history={history}
                     onSelect={(d) => { setActiveDeclaration(d); setView('preview'); }}
                     onDelete={deleteFromHistory}
                     userRole={userRole}
                   />
-                </div>
-              ) : view === 'users' ? (
-                <div className="p-6 md:p-10 pb-20 max-w-6xl mx-auto w-full">
+                ) : view === 'users' ? (
                   <UsersView apiUrl={API_URL} />
-                </div>
-              ) : view === 'logs' ? (
-                <div className="p-6 md:p-10 pb-20 max-w-6xl mx-auto w-full">
+                ) : view === 'logs' ? (
                   <LogsView apiUrl={API_URL} />
-                </div>
-              ) : activeDeclaration && (
-                <div className="max-w-[21cm] mx-auto p-6 md:p-10 pb-20 relative">
-                  <div id="declaration-content" className="bg-white shadow-2xl border border-zinc-100 print:border-none print:shadow-none min-h-[29.7cm] rounded-sm transform origin-top md:scale-[0.9] lg:scale-100 transition-transform">
-                    <DeclarationPreview
-                      declaration={activeDeclaration}
-                    />
-                  </div>
+                ) : (view === 'preview' || view === 'signature-mode') && activeDeclaration ? (
+                  <div className="max-w-[21cm] mx-auto relative group">
+                    <div id="declaration-content" className="bg-white shadow-2xl border border-zinc-100 rounded-sm transform origin-top transition-transform duration-500 hover:scale-[1.01]">
+                      <DeclarationPreview
+                        declaration={activeDeclaration}
+                      />
+                    </div>
 
-                  {/* Floating Action Buttons */}
-                  <div className="no-print fixed bottom-10 right-10 flex flex-col gap-3 z-50">
-                    {userRole === 'master' && (
+                    {/* Botões Flutuantes Premium */}
+                    <div className="no-print fixed bottom-12 right-12 flex flex-col gap-4 z-50">
+                      {userRole === 'master' && (
+                        <ActionButton
+                          icon={<Edit2Icon className="w-5 h-5" />}
+                          onClick={handleEdit}
+                          title="Editar Dados"
+                          variant="secondary"
+                        />
+                      )}
                       <ActionButton
-                        icon={<EditIcon className="w-5 h-5" />}
-                        onClick={handleEdit}
-                        title="Editar Declaração"
+                        icon={<MailIcon className="w-5 h-5" />}
+                        onClick={handleResendEmail}
+                        title="Reenviar E-mail"
                         variant="secondary"
                       />
-                    )}
-                    <ActionButton
-                      icon={<MailIcon className="w-5 h-5" />}
-                      onClick={handleResendEmail}
-                      title="Enviar por E-mail"
-                      variant="secondary"
-                    />
-                    <ActionButton
-                      icon={<PrinterIcon className="w-5 h-5" />}
-                      onClick={handlePrint}
-                      title="Imprimir Declaração"
-                      variant="secondary"
-                    />
-                    <ActionButton
-                      icon={<DownloadIcon className="w-5 h-5" />}
-                      onClick={handleDownloadPDF}
-                      title="Baixar PDF"
-                      variant="primary"
-                    />
+                      <ActionButton
+                        icon={<PrinterIcon className="w-5 h-5" />}
+                        onClick={handlePrint}
+                        title="Imprimir"
+                        variant="secondary"
+                      />
+                      <ActionButton
+                        icon={<DownloadIcon className="w-5 h-5" />}
+                        onClick={handleDownloadPDF}
+                        title="Baixar PDF"
+                        variant="primary"
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-20 text-zinc-300">
+                    <ActivityIcon className="w-16 h-16 opacity-10 mb-4" />
+                    <p className="text-xs font-black uppercase tracking-widest">Selecione uma ação no menu lateral</p>
+                  </div>
+                )}
+              </div>
             </main>
           </div>
         </div>
@@ -765,10 +776,10 @@ const App: React.FC = () => {
 const SidebarItem: React.FC<{ icon: React.ReactNode; label: string; active: boolean; collapsed: boolean; onClick: () => void }> = ({ icon, label, active, collapsed, onClick }) => (
   <button
     onClick={onClick}
-    className={`relative group w-full flex items-center transition-all ${collapsed ? 'justify-center p-3.5' : 'p-3 gap-3'} rounded-xl font-bold uppercase tracking-widest text-[10px] ${active ? 'bg-zinc-100 text-zinc-950 shadow-md' : 'text-zinc-500 hover:bg-zinc-900/50 hover:text-zinc-100'}`}
+    className={`relative group w-full flex items-center transition-all ${collapsed ? 'justify-center p-3.5' : 'p-3 gap-3'} rounded-xl font-bold uppercase tracking-widest text-[10px] ${active ? 'bg-zinc-100 text-zinc-950 shadow-md' : 'text-zinc-500 hover:bg-zinc-900/5 hover:text-zinc-100'}`}
   >
     <div className={`shrink-0 transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>{icon}</div>
-    {!collapsed && <span className="whitespace-nowrap overflow-hidden text-left">{label}</span>}
+    {!collapsed && <span className="whitespace-nowrap overflow-hidden text-left font-black">{label}</span>}
   </button>
 );
 
@@ -776,7 +787,7 @@ const ActionButton: React.FC<{ icon: React.ReactNode; onClick: () => void; title
   <button
     onClick={onClick}
     title={title}
-    className={`p-4 rounded-2xl shadow-2xl transition-all active:scale-90 flex items-center justify-center ${variant === 'primary' ? 'bg-zinc-950 text-white hover:bg-zinc-800' : 'bg-white text-zinc-900 border border-zinc-200 hover:bg-zinc-50'}`}
+    className={`p-4 rounded-2xl shadow-2xl transition-all active:scale-90 flex items-center justify-center ${variant === 'primary' ? 'bg-zinc-900 text-white hover:bg-zinc-800' : 'bg-white text-zinc-900 border border-zinc-200 hover:bg-zinc-50'}`}
   >
     {icon}
   </button>

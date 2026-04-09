@@ -298,13 +298,13 @@ export const DeclarationForm: React.FC<Props> = ({
                 onClick={() => setStep(s.id)}
                 className={`flex flex-col items-center gap-2 group transition-all ${step === s.id ? 'opacity-100' : isAllowed ? 'opacity-40 hover:opacity-70' : 'opacity-10 cursor-not-allowed'}`}
               >
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-lg ${step === s.id ? 'bg-zinc-900 text-white scale-110' : 'bg-zinc-100 text-zinc-500'}`}>
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm border ${step === s.id ? 'bg-[#0078d4] text-white border-[#0078d4] scale-110' : 'bg-white text-zinc-400 border-zinc-200'}`}>
                   {step > s.id ? <CheckCircle2Icon className="w-6 h-6" /> : s.icon}
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-widest">{s.name}</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600">{s.name}</span>
               </button>
               {idx < steps.length - 1 && (
-                <div className={`flex-1 h-0.5 mx-4 rounded-full ${step > s.id + 1 ? 'bg-zinc-900' : 'bg-zinc-100'}`} />
+                <div className={`flex-1 h-0.5 mx-4 rounded-full ${step > s.id + 1 ? 'bg-[#0078d4]' : 'bg-zinc-200'}`} />
               )}
             </React.Fragment>
           );
@@ -317,11 +317,11 @@ export const DeclarationForm: React.FC<Props> = ({
           <section className="space-y-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-6 w-1.5 bg-zinc-900 rounded-full"></div>
+                <div className="h-6 w-1.5 bg-[#0078d4] rounded-full"></div>
                 <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest">Remetente (Pessoa Física ou Jurídica)</h3>
               </div>
               <div className="flex gap-4">
-                <button type="button" onClick={() => setIsSmartModalOpen(true)} className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-zinc-100 text-zinc-900 hover:bg-zinc-200 rounded-xl transition-all shadow-sm">
+                <button type="button" onClick={() => setIsSmartModalOpen(true)} className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-white text-[#0078d4] border border-[#0078d4] hover:bg-blue-50 rounded-xl transition-all shadow-sm">
                   <SparklesIcon className="w-4 h-4" /> Importação Inteligente
                 </button>
                 <button type="button" onClick={handleClear} className="flex items-center gap-2 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
@@ -353,7 +353,7 @@ export const DeclarationForm: React.FC<Props> = ({
                 />
                 {isSearchingCnpj && (
                   <div className="absolute right-3 top-9 text-zinc-400">
-                    <div className="animate-spin w-4 h-4 border-2 border-zinc-300 border-t-zinc-900 rounded-full" />
+                    <div className="animate-spin w-4 h-4 border-2 border-zinc-300 border-t-[#0078d4] rounded-full" />
                   </div>
                 )}
               </div>
@@ -377,7 +377,7 @@ export const DeclarationForm: React.FC<Props> = ({
                 />
                 {isSearchingCep && (
                   <div className="absolute right-3 top-9 text-zinc-400">
-                    <div className="animate-spin w-4 h-4 border-2 border-zinc-300 border-t-zinc-900 rounded-full" />
+                    <div className="animate-spin w-4 h-4 border-2 border-zinc-300 border-t-[#0078d4] rounded-full" />
                   </div>
                 )}
               </div>
@@ -397,8 +397,6 @@ export const DeclarationForm: React.FC<Props> = ({
                 placeholder="(00) 00000-0000"
               />
             </div>
-
-
           </section>
         )}
 
@@ -406,23 +404,23 @@ export const DeclarationForm: React.FC<Props> = ({
           <section className="space-y-8">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <div className="h-6 w-1.5 bg-zinc-900 rounded-full"></div>
+                <div className="h-6 w-1.5 bg-[#0078d4] rounded-full"></div>
                 <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest">Itens para Transporte</h3>
               </div>
-              <button type="button" onClick={handleAddEquipment} className="flex items-center gap-2 text-[11px] bg-zinc-900 text-white px-4 py-2 rounded-xl hover:bg-zinc-800 transition-all font-bold uppercase tracking-tight shadow-lg shadow-zinc-950/10">
+              <button type="button" onClick={handleAddEquipment} className="flex items-center gap-2 text-[11px] bg-[#0078d4] text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-all font-bold uppercase tracking-tight shadow-md">
                 <PlusCircle className="w-4 h-4" /> Adicionar Item
               </button>
             </div>
             <div className="space-y-4">
               {equipment.map((item, idx) => (
-                <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-5 bg-zinc-50/50 p-6 rounded-[1.5rem] border border-zinc-100 relative group transition-all hover:bg-white hover:shadow-xl hover:shadow-zinc-200/30">
+                <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-5 bg-white p-6 rounded-[1.5rem] border border-zinc-200 relative group transition-all hover:border-[#0078d4]/30 hover:shadow-xl hover:shadow-zinc-200/30">
                   <FormField label="Descrição" value={item.description} onChange={(v) => handleEquipmentChange(idx, 'description', v)} />
                   <FormField label="Modelo" value={item.model} onChange={(v) => handleEquipmentChange(idx, 'model', v)} />
                   <FormField
                     label="Nº Série"
                     value={item.serialNumber}
-                    onChange={(v) => handleEquipmentChange(idx, 'serialNumber', v.replace(/\D/g, ''))}
-                    placeholder="Somente números"
+                    onChange={(v) => handleEquipmentChange(idx, 'serialNumber', v)}
+                    placeholder="Série do Item"
                   />
                   <div className="flex gap-3 items-end">
                     <div className="flex-1">
@@ -430,7 +428,7 @@ export const DeclarationForm: React.FC<Props> = ({
                       <div className="relative">
                         <input
                           type="text"
-                          className="w-full pl-4 pr-4 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 outline-none font-medium transition-all"
+                          className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs focus:ring-1 focus:ring-[#0078d4] focus:border-[#0078d4] outline-none font-medium transition-all"
                           value={item.unitValue > 0 ? formatCurrency(item.unitValue) : ''}
                           placeholder="R$ 0,00"
                           onChange={(e) => handleEquipmentChange(idx, 'unitValue', parseCurrencyToNumber(e.target.value))}
@@ -452,7 +450,7 @@ export const DeclarationForm: React.FC<Props> = ({
         {step === 3 && (
           <section className="space-y-8">
             <div className="flex items-center gap-3">
-              <div className="h-6 w-1.5 bg-zinc-900 rounded-full"></div>
+              <div className="h-6 w-1.5 bg-[#0078d4] rounded-full"></div>
               <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest">Dados da Coleta / Transportadora</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -472,7 +470,7 @@ export const DeclarationForm: React.FC<Props> = ({
         {step === 4 && (
           <section className="space-y-8">
             <div className="flex items-center gap-3">
-              <div className="h-6 w-1.5 bg-zinc-900 rounded-full"></div>
+              <div className="h-6 w-1.5 bg-[#0078d4] rounded-full"></div>
               <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest">Dados de Destino (À CTDI do Brasil)</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -492,7 +490,7 @@ export const DeclarationForm: React.FC<Props> = ({
                 />
                 {isSearchingCnpj && step === 4 && (
                   <div className="absolute right-3 top-9 text-zinc-400">
-                    <div className="animate-spin w-4 h-4 border-2 border-zinc-300 border-t-zinc-900 rounded-full" />
+                    <div className="animate-spin w-4 h-4 border-2 border-zinc-300 border-t-[#0078d4] rounded-full" />
                   </div>
                 )}
               </div>
@@ -513,7 +511,7 @@ export const DeclarationForm: React.FC<Props> = ({
                 />
                 {isSearchingCep && step === 4 && (
                   <div className="absolute right-3 top-9 text-zinc-400">
-                    <div className="animate-spin w-4 h-4 border-2 border-zinc-300 border-t-zinc-900 rounded-full" />
+                    <div className="animate-spin w-4 h-4 border-2 border-zinc-300 border-t-[#0078d4] rounded-full" />
                   </div>
                 )}
               </div>
@@ -524,11 +522,11 @@ export const DeclarationForm: React.FC<Props> = ({
       </div>
 
       {/* Navigation Footer */}
-      <div className="flex items-center justify-between pt-10 border-t border-zinc-100">
+      <div className="flex items-center justify-between pt-10 border-t border-zinc-200">
         <button
           disabled={step === 1}
           onClick={() => setStep(step - 1)}
-          className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${step === 1 ? 'opacity-0 pointer-events-none' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'}`}
+          className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${step === 1 ? 'opacity-0 pointer-events-none' : 'bg-white border border-zinc-200 text-zinc-500 hover:bg-zinc-50'}`}
         >
           <ChevronLeftIcon className="w-4 h-4" /> Passo Anterior
         </button>
@@ -537,14 +535,14 @@ export const DeclarationForm: React.FC<Props> = ({
           <button
             onClick={() => setStep(step + 1)}
             disabled={!canNavigateTo(step + 1)}
-            className={`flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl active:scale-95 ${canNavigateTo(step + 1) ? 'bg-zinc-900 text-white hover:bg-zinc-800 shadow-zinc-900/20' : 'bg-zinc-100 text-zinc-300 cursor-not-allowed shadow-none'}`}
+            className={`flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-md active:scale-95 ${canNavigateTo(step + 1) ? 'bg-[#0078d4] text-white hover:bg-blue-700' : 'bg-zinc-100 text-zinc-300 cursor-not-allowed shadow-none'}`}
           >
             Próximo Passo <ChevronRightIcon className="w-4 h-4" />
           </button>
         ) : (
           <button
             onClick={() => onGenerate()}
-            className="flex items-center gap-2 px-10 py-4 bg-zinc-950 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-zinc-800 transition-all shadow-2xl shadow-zinc-950/30 active:scale-95"
+            className="flex items-center gap-2 px-10 py-4 bg-zinc-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-zinc-800 transition-all shadow-xl active:scale-95"
           >
             Finalizar e Gerar <CheckCircle2Icon className="w-5 h-5" />
           </button>
@@ -562,11 +560,11 @@ export const DeclarationForm: React.FC<Props> = ({
 
 const FormField: React.FC<{ label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }> = ({ label, value, onChange, type = "text", placeholder }) => (
   <div className="w-full">
-    <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-2 ml-1 tracking-wider">{label}</label>
+    <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-2 ml-1 tracking-wider">{label}</label>
     <input
       type={type}
       placeholder={placeholder}
-      className="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-xl text-xs focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-900 outline-none transition-all hover:border-zinc-300 font-medium"
+      className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs focus:ring-1 focus:ring-[#0078d4] focus:border-[#0078d4] outline-none transition-all hover:border-zinc-300 font-medium"
       value={value}
       onChange={(e) => onChange(e.target.value)}
     />

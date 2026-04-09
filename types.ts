@@ -49,4 +49,11 @@ export interface Declaration {
   requestNumber?: string;
   signatureSender?: string; // Base64 image
   signatureCarrier?: string; // Base64 image
+  // Extra Metadata from Paygen
+  shipToAddressTo?: string;
+  employeeEmail?: string;
+  deliveryDate?: string;
+  requestType?: string;
+  priority?: string;
+  legalHold?: string;
 }

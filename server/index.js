@@ -28,11 +28,17 @@ const pool = new pg.Pool({
         ? false : { rejectUnauthorized: false }
 });
 
-// Ensure request_number column exists
+// Ensure request_number and extra metadata columns exist
 try {
     await pool.query('ALTER TABLE declarations ADD COLUMN IF NOT EXISTS request_number VARCHAR(50)');
+    await pool.query('ALTER TABLE declarations ADD COLUMN IF NOT EXISTS ship_to_address_to VARCHAR(255)');
+    await pool.query('ALTER TABLE declarations ADD COLUMN IF NOT EXISTS employee_email VARCHAR(255)');
+    await pool.query('ALTER TABLE declarations ADD COLUMN IF NOT EXISTS delivery_date VARCHAR(50)');
+    await pool.query('ALTER TABLE declarations ADD COLUMN IF NOT EXISTS request_type VARCHAR(50)');
+    await pool.query('ALTER TABLE declarations ADD COLUMN IF NOT EXISTS priority VARCHAR(50)');
+    await pool.query('ALTER TABLE declarations ADD COLUMN IF NOT EXISTS legal_hold VARCHAR(50)');
 } catch (err) {
-    console.warn('Could not ensure request_number column:', err.message);
+    console.warn('Could not ensure columns:', err.message);
 }
 
 // Email Transporter Configuration
@@ -153,7 +159,13 @@ app.get('/api/declarations', async (req, res) => {
             carrier: row.carrier,
             signatureSender: row.signature_sender,
             signatureCarrier: row.signature_carrier,
-            requestNumber: row.request_number
+            requestNumber: row.request_number,
+            shipToAddressTo: row.ship_to_address_to,
+            employeeEmail: row.employee_email,
+            deliveryDate: row.delivery_date,
+            requestType: row.request_type,
+            priority: row.priority,
+            legalHold: row.legal_hold
         }));
         res.json(declarations);
     } catch (err) {
@@ -173,16 +185,35 @@ app.delete('/api/declarations/:id', async (req, res) => {
 });
 
 app.post('/api/declarations', async (req, res) => {
-    const { id, number, date, city, recipient, equipment, sender, carrier, signatureSender, signatureCarrier, pdfBase64, requestNumber } = req.body;
+    const { 
+        id, number, date, city, recipient, equipment, sender, carrier, 
+        signatureSender, signatureCarrier, requestNumber,
+        shipToAddressTo, employeeEmail, deliveryDate, requestType, priority, legalHold,
+        pdfBase64
+    } = req.body;
     try {
         await pool.query(
-            `INSERT INTO declarations (id, number, date, city, recipient, equipment, sender, carrier, signature_sender, signature_carrier, request_number)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-       ON CONFLICT (id) DO UPDATE SET
-       signature_sender = EXCLUDED.signature_sender,
-       signature_carrier = EXCLUDED.signature_carrier,
-       request_number = EXCLUDED.request_number`,
-            [id, number, date, city, JSON.stringify(recipient), JSON.stringify(equipment), JSON.stringify(sender), JSON.stringify(carrier), signatureSender, signatureCarrier, requestNumber]
+            `INSERT INTO declarations (
+                id, number, date, city, recipient, equipment, sender, carrier, 
+                signature_sender, signature_carrier, request_number,
+                ship_to_address_to, employee_email, delivery_date, request_type, priority, legal_hold
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+            ON CONFLICT (id) DO UPDATE SET
+            signature_sender = EXCLUDED.signature_sender,
+            signature_carrier = EXCLUDED.signature_carrier,
+            request_number = EXCLUDED.request_number,
+            ship_to_address_to = EXCLUDED.ship_to_address_to,
+            employee_email = EXCLUDED.employee_email,
+            delivery_date = EXCLUDED.delivery_date,
+            request_type = EXCLUDED.request_type,
+            priority = EXCLUDED.priority,
+            legal_hold = EXCLUDED.legal_hold`,
+            [
+                id, number, date, city, JSON.stringify(recipient), JSON.stringify(equipment), JSON.stringify(sender), JSON.stringify(carrier), 
+                signatureSender, signatureCarrier, requestNumber,
+                shipToAddressTo, employeeEmail, deliveryDate, requestType, priority, legalHold
+            ]
         );
 
         // Log the action

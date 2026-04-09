@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { XIcon, SparklesIcon, ClipboardIcon } from 'lucide-react';
-import { SenderData, CarrierData, Equipment } from '../types';
+import { SenderData, CarrierData, Equipment, Declaration } from '../types';
 
 interface Props {
     isOpen: boolean;
@@ -97,15 +97,18 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
                 street = addr1.substring(0, commaIndex).trim();
                 number = addr1.substring(commaIndex + 1).trim();
             } else {
-                // Try to find the last numeric part as the number
-                const lastSpaceIndex = addr1.lastIndexOf(' ');
-                if (lastSpaceIndex !== -1) {
-                    const potentialNum = addr1.substring(lastSpaceIndex + 1).trim();
-                    if (/^\d/.test(potentialNum)) { // If it starts with a digit
-                        street = addr1.substring(0, lastSpaceIndex).trim();
-                        number = potentialNum;
-                    }
+            if (addr1.includes(',')) {
+                const parts = addr1.split(',');
+                number = parts.pop()?.trim() || '';
+                street = parts.join(',').trim();
+            } else {
+                // Find where the number starts (first occurrence of a digit)
+                const match = addr1.match(/(.*?)(\d+.*)$/);
+                if (match) {
+                    street = match[1].trim();
+                    number = match[2].trim();
                 }
+            }
             }
 
             sender.address = street;
@@ -139,6 +142,15 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
 
         const reqNum = get('requestNumber') || scan(/requestNumber\s+(\S+)/i) || scan(/(RITM\d+)/i);
         if (reqNum) requestNumber = reqNum;
+
+        const extraMetadata: Partial<Record<keyof Declaration, string>> = {
+            shipToAddressTo: get('shipToAddressTo') || scan(/shipToAddressTo\s+(.+)/i),
+            employeeEmail: get('employeeEmail') || scan(/employeeEmail\s+(\S+@\S+)/i),
+            deliveryDate: get('deliveryDate') || scan(/deliveryDate\s+(\d{2}\/\d{2}\/\d{4})/i),
+            requestType: get('requestType') || scan(/requestType\s+(\S+)/i),
+            priority: get('priority') || scan(/priority\s+(\S+)/i),
+            legalHold: get('legalHold') || scan(/legalHold\s+(\S+)/i),
+        };
 
         const empPhone = get('employeePhone', 'Telefone/Fax:') || scan(/employeePhone\s+(\S+)/i);
         if (empPhone) {
@@ -184,7 +196,8 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
             sender: (importType === 'all' || importType === 'sender') && Object.keys(sender).length > 0 ? sender : undefined,
             carrier: importType === 'all' && Object.keys(carrier).length > 0 ? carrier : undefined,
             equipment: (importType === 'all' || importType === 'items') && items.length > 0 ? items : undefined,
-            requestNumber: requestNumber || undefined
+            requestNumber: requestNumber || undefined,
+            ...extraMetadata
         });
 
         setText('');
