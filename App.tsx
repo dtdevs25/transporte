@@ -1,0 +1,780 @@
+
+import React, { useState, useEffect } from 'react';
+import {
+  PlusIcon,
+  PrinterIcon,
+  TrashIcon,
+  HistoryIcon,
+  FileTextIcon,
+  DownloadIcon,
+  SearchIcon,
+  QrCodeIcon,
+  CheckCircle2Icon,
+  MenuIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  LogOutIcon,
+  MailIcon,
+  LockIcon,
+  UserIcon,
+  ArrowRightIcon,
+  SaveIcon,
+  EyeIcon,
+  EyeOffIcon,
+  ShieldIcon,
+  ActivityIcon,
+  EditIcon
+} from 'lucide-react';
+import { Declaration, Equipment, SenderData, CarrierData, RecipientData } from './types';
+import { DeclarationPreview } from './components/DeclarationPreview';
+import { DeclarationForm } from './components/DeclarationForm';
+import { ConsultationView } from './components/ConsultationView';
+import { SignatureModal } from './components/SignatureModal';
+import { UsersView } from './components/UsersView';
+import { NotificationModal, NotificationType } from './components/NotificationModal';
+import { LogsView } from './components/LogsView';
+
+const INITIAL_SENDER: SenderData = {
+  name: '',
+  cpf: '',
+  cnpj: '',
+  address: '',
+  number: '',
+  bairro: '',
+  city: '',
+  state: '',
+  zipCode: '',
+  contact: '',
+  phone: '',
+  companyName: '',
+};
+
+const INITIAL_RECIPIENT: RecipientData = {
+  name: 'CTDI do Brasil LTDA',
+  address: 'Av Comendador Aladino Selmi, 4630 - GR2 Campinas - Mod. 18 a 21, Vila San Martin',
+  cityState: 'Campinas - SP',
+  zipCode: '13069-096',
+  cnpj: '01.812.661/0001-84',
+  ie: '244.698.974.115',
+};
+
+const INITIAL_CARRIER: CarrierData = {
+  driverName: '',
+  rg: '',
+  collectionDate: new Date().toISOString().split('T')[0],
+  companyName: '',
+};
+
+const INITIAL_EQUIPMENT: Equipment[] = [
+  { description: '', model: '', serialNumber: '', unitValue: 0 }
+];
+
+type ViewState = 'edit' | 'preview' | 'consultation' | 'signature-mode' | 'users' | 'logs';
+
+const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:3000/api' : '/api';
+
+const App: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [userRole, setUserRole] = useState<'master' | 'user' | null>(null);
+  const [currentUsername, setCurrentUsername] = useState<string | null>(null);
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [loginError, setLoginError] = useState('');
+
+  const [history, setHistory] = useState<Declaration[]>([]);
+  const [currentNumber, setCurrentNumber] = useState<number>(21525);
+  const [activeDeclaration, setActiveDeclaration] = useState<Declaration | null>(null);
+  const [view, setView] = useState<ViewState>('edit');
+  const [sigModal, setSigModal] = useState<{ open: boolean; type: 'sender' | 'carrier' | null }>({ open: false, type: null });
+  const [isMenuCollapsed, setIsMenuCollapsed] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Notification Modal State
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: NotificationType;
+    onConfirm?: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const handleUpdate = (updatedData: Partial<{
+    sender: SenderData;
+    recipient: RecipientData;
+    carrier: CarrierData;
+    equipment: Equipment[];
+    requestNumber: string;
+  }>) => {
+    const current = activeDeclaration || {
+      id: '',
+      number: '',
+      date: '',
+      city: '',
+      sender: INITIAL_SENDER,
+      recipient: INITIAL_RECIPIENT,
+      carrier: INITIAL_CARRIER,
+      equipment: INITIAL_EQUIPMENT,
+      requestNumber: ''
+    };
+
+    setActiveDeclaration({
+      ...current,
+      ...updatedData
+    });
+  };
+
+  const showNotification = (title: string, message: string, type: NotificationType = 'info', onConfirm?: () => void) => {
+    setNotification({ isOpen: true, title, message, type, onConfirm });
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleDownloadPDF = () => {
+    const element = document.getElementById('declaration-content');
+    if (!element || !activeDeclaration) return;
+
+    const opt = {
+      margin: 0,
+      filename: `Declaracao_${activeDeclaration.number}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // @ts-ignore
+    html2pdf().set(opt).from(element).save();
+  };
+
+  const handleSaveManual = async () => {
+    if (!activeDeclaration) return;
+
+    try {
+      const response = await fetch(`${API_URL}/declarations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-username': currentUsername || 'admin'
+        },
+        body: JSON.stringify(activeDeclaration)
+      });
+
+      if (response.ok) {
+        showNotification('Sucesso', 'Declaração salva com sucesso no histórico.', 'success');
+        fetchDeclarations(); // Refresh history
+      } else {
+        showNotification('Erro', 'Houve um problema ao salvar a declaração.', 'error');
+      }
+    } catch (error) {
+      console.error('Error saving manual:', error);
+      showNotification('Erro de Conexão', 'Não foi possível conectar ao servidor.', 'error');
+    }
+  };
+
+  const fetchDeclarations = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/declarations`);
+      if (response.ok) {
+        const data = await response.json();
+        setHistory(data);
+        if (data.length > 0) {
+          // Get the highest number from history to sync the counter
+          const numbers = data.map((d: any) => parseInt(d.number, 10)).filter((n: any) => !isNaN(n));
+          if (numbers.length > 0) {
+            const lastNum = Math.max(...numbers);
+            setCurrentNumber(lastNum);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching declarations:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const auth = sessionStorage.getItem('is_authenticated');
+    const role = sessionStorage.getItem('user_role') as 'master' | 'user' | null;
+    const username = sessionStorage.getItem('username');
+
+    if (auth === 'true') {
+      setIsAuthenticated(true);
+      fetchDeclarations();
+
+      if (role) {
+        setUserRole(role);
+      } else if (username) {
+        // Recover role from server if missing in session
+        fetch(`${API_URL}/user-role/${username}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.role) {
+              setUserRole(data.role);
+              sessionStorage.setItem('user_role', data.role);
+            }
+          })
+          .catch(err => console.error('Error recovering role:', err));
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash;
+      if (hash.startsWith('#/sign/')) {
+        const parts = hash.split('/');
+        const id = parts[2];
+        const type = parts[3] as 'sender' | 'carrier';
+        const found = history.find(h => h.id === id);
+        if (found) {
+          setActiveDeclaration(found);
+          setSigModal({ open: true, type });
+          setView('signature-mode');
+        }
+      }
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, [history]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginForm)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setIsAuthenticated(true);
+        setUserRole(data.role);
+        setCurrentUsername(data.username);
+        sessionStorage.setItem('is_authenticated', 'true');
+        sessionStorage.setItem('user_role', data.role);
+        sessionStorage.setItem('username', data.username);
+        fetchDeclarations();
+      } else {
+        const errorData = await response.json();
+        setLoginError(errorData.error || 'Credenciais inválidas. Tente novamente.');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setLoginError('Erro ao conectar com o servidor');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setUserRole(null);
+    setCurrentUsername(null);
+    setLoginForm({ username: '', password: '' });
+    sessionStorage.removeItem('is_authenticated');
+    sessionStorage.removeItem('user_role');
+    sessionStorage.removeItem('username');
+    window.location.hash = '';
+  };
+
+  const deleteFromHistory = async (id: string) => {
+    showNotification(
+      'Confirmar Exclusão',
+      'Deseja realmente excluir este registro permanentemente?',
+      'confirm',
+      async () => {
+        try {
+          const response = await fetch(`${API_URL}/declarations/${id}`, { method: 'DELETE' });
+          if (response.ok) {
+            setHistory(prev => prev.filter(h => h.id !== id));
+            showNotification('Sucesso', 'Declaração excluída com sucesso.', 'success');
+            if (activeDeclaration?.id === id) {
+              setActiveDeclaration(null);
+              setView('edit');
+            }
+          }
+        } catch (error) {
+          console.error('Error deleting declaration:', error);
+          showNotification('Erro', 'Não foi possível excluir a declaração.', 'error');
+        }
+      }
+    );
+  };
+
+  const saveSignature = async (base64: string) => {
+    if (!activeDeclaration || !sigModal.type) return;
+
+    const field = sigModal.type === 'sender' ? 'signatureSender' : 'signatureCarrier';
+    const updatedDecl = {
+      ...activeDeclaration,
+      [field]: base64
+    };
+
+    try {
+      const response = await fetch(`${API_URL}/declarations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-username': currentUsername || 'admin'
+        },
+        body: JSON.stringify(updatedDecl)
+      });
+
+      if (response.ok) {
+        setHistory(prev => prev.map(h => h.id === activeDeclaration.id ? updatedDecl : h));
+        setActiveDeclaration(updatedDecl);
+        setSigModal({ open: false, type: null });
+
+        if (view === 'signature-mode') {
+          setView('preview');
+          window.location.hash = '';
+        }
+      }
+    } catch (error) {
+      console.error('Error saving signature:', error);
+      alert('Erro ao salvar assinatura');
+    }
+  };
+
+  const handleGenerate = async (data: Partial<Declaration>) => {
+    const nextNum = currentNumber + 1;
+    const formattedNum = nextNum.toString().padStart(8, '0');
+
+    const newDeclHost: Declaration = {
+      id: crypto.randomUUID(),
+      number: formattedNum,
+      date: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase(),
+      city: 'CAMPINAS',
+      recipient: data.recipient || INITIAL_RECIPIENT,
+      equipment: data.equipment || INITIAL_EQUIPMENT,
+      sender: data.sender || INITIAL_SENDER,
+      carrier: data.carrier || INITIAL_CARRIER,
+    };
+
+    setIsLoading(true);
+    try {
+      // 1. First, show the preview so html2pdf can find the element
+      setActiveDeclaration(newDeclHost);
+      setView('preview');
+
+      // Wait a bit for React to render the preview content
+      setTimeout(async () => {
+        const element = document.getElementById('declaration-content');
+        let pdfBase64 = null;
+
+        if (element) {
+          const opt = {
+            margin: 0,
+            filename: activeDeclaration.requestNumber ? `${activeDeclaration.requestNumber}.pdf` : `Declaracao_${formattedNum}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          };
+
+          try {
+            // @ts-ignore
+            pdfBase64 = await html2pdf().set(opt).from(element).output('datauristring');
+          } catch (pdfErr) {
+            console.error('Error generating PDF for email:', pdfErr);
+          }
+        }
+
+        // 2. Send to backend with PDF anexo
+        const response = await fetch(`${API_URL}/declarations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-username': currentUsername || 'admin'
+          },
+          body: JSON.stringify({ ...newDeclHost, pdfBase64 })
+        });
+
+        if (response.ok) {
+          setHistory([newDeclHost, ...history]);
+          setCurrentNumber(nextNum);
+          showNotification('Sucesso', 'Documento gerado, salvo e enviado por e-mail com sucesso!', 'success');
+        } else {
+          showNotification('Atenção', 'Documento gerado, mas houve um erro ao enviar para o servidor.', 'error');
+        }
+        setIsLoading(false);
+      }, 1000);
+
+    } catch (error) {
+      console.error('Error saving declaration:', error);
+      showNotification('Erro', 'Houve um problema ao gerar o documento.', 'error');
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendEmail = async () => {
+    if (!activeDeclaration) return;
+
+    setIsLoading(true);
+    const element = document.getElementById('declaration-content');
+    let pdfBase64 = null;
+
+    if (element) {
+      const opt = {
+        margin: 0,
+        filename: activeDeclaration.requestNumber ? `${activeDeclaration.requestNumber}.pdf` : `Declaracao_${activeDeclaration.number}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      try {
+        // @ts-ignore
+        pdfBase64 = await html2pdf().set(opt).from(element).output('datauristring');
+      } catch (pdfErr) {
+        console.error('Error generating PDF for resend:', pdfErr);
+      }
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/declarations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-username': currentUsername || 'admin'
+        },
+        body: JSON.stringify({ ...activeDeclaration, pdfBase64 })
+      });
+
+      if (response.ok) {
+        showNotification('Sucesso', 'E-mail reenviado com sucesso!', 'success');
+      } else {
+        showNotification('Erro', 'Falha ao reenviar e-mail.', 'error');
+      }
+    } catch (error) {
+      console.error('Error resending email:', error);
+      showNotification('Erro', 'Houve um problema ao reenviar o documento.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEdit = () => {
+    setView('edit');
+  };
+
+  return (
+    <>
+      {!isAuthenticated ? (
+        <div className="h-screen flex items-center justify-center bg-zinc-950 p-6">
+          <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden group">
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-zinc-100/5 rounded-full blur-3xl group-hover:bg-zinc-100/10 transition-colors"></div>
+
+              <header className="mb-10 text-center flex flex-col items-center">
+                <img src="/LOGO_LOGIN.png" alt="Logo Transporte Fácil" className="w-full max-w-[182px] h-auto mb-2 object-contain" />
+              </header>
+
+              <form onSubmit={handleLogin} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Usuário ou E-mail</label>
+                  <div className="relative">
+                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                    <input
+                      type="text"
+                      required
+                      value={loginForm.username}
+                      onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                      className="w-full pl-12 pr-4 py-3.5 bg-zinc-950 border border-zinc-800 rounded-2xl text-white text-sm outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-600 transition-all font-medium"
+                      placeholder="Username ou dsantos@ctdi.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Senha</label>
+                  <div className="relative">
+                    <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={loginForm.password}
+                      onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                      className="w-full pl-12 pr-12 py-3.5 bg-zinc-950 border border-zinc-800 rounded-2xl text-white text-sm outline-none focus:ring-1 focus:ring-zinc-600 focus:border-zinc-600 transition-all font-medium"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
+                    >
+                      {showPassword ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {loginError && (
+                  <p className="text-red-500 text-[10px] font-black uppercase tracking-tight text-center bg-red-500/10 py-2 rounded-lg border border-red-500/20">
+                    {loginError}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full group flex items-center justify-center gap-3 py-4 bg-zinc-100 hover:bg-white text-zinc-950 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-white/5 transition-all active:scale-[0.98] disabled:opacity-50"
+                >
+                  {isLoading ? 'Autenticando...' : 'Entrar no Sistema'}
+                  <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </form>
+
+              <footer className="mt-10 text-center">
+                <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-tighter">© 2026 CTDI do Brasil Ltda.</p>
+              </footer>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="h-screen flex bg-zinc-50 overflow-hidden">
+          <aside
+            className={`no-print h-full bg-zinc-950 text-zinc-100 transition-sidebar flex flex-col z-40 border-r border-zinc-800 shrink-0 overflow-hidden ${isMenuCollapsed ? 'w-20' : 'w-64'}`}
+          >
+            <div className={`flex items-center border-b border-zinc-900/50 h-16 shrink-0 px-4 ${isMenuCollapsed ? 'justify-center' : 'justify-between'}`}>
+              <div className="flex items-center justify-center w-full h-full overflow-hidden">
+                <img
+                  src={isMenuCollapsed ? "/LOGO_MENU_FECHADO.png" : "/LOGO_MENU_ABERTO.png"}
+                  alt="Logo"
+                  className={`h-auto transition-all duration-300 ${isMenuCollapsed ? 'w-10' : 'w-48'}`}
+                />
+              </div>
+            </div>
+
+            <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto overflow-x-hidden custom-scrollbar">
+              <SidebarItem
+                icon={<PlusIcon className="w-5 h-5" />}
+                label="Novo Documento"
+                active={view === 'edit'}
+                collapsed={isMenuCollapsed}
+                onClick={() => { setView('edit'); setActiveDeclaration(null); }}
+              />
+              <SidebarItem
+                icon={<SearchIcon className="w-5 h-5" />}
+                label="Histórico"
+                active={view === 'consultation'}
+                collapsed={isMenuCollapsed}
+                onClick={() => setView('consultation')}
+              />
+              {userRole === 'master' && (
+                <>
+                  <SidebarItem
+                    icon={<UserIcon className="w-5 h-5" />}
+                    label="Usuários"
+                    active={view === 'users'}
+                    collapsed={isMenuCollapsed}
+                    onClick={() => setView('users')}
+                  />
+                  <SidebarItem
+                    icon={<ShieldIcon className="w-5 h-5" />}
+                    label="Logs"
+                    active={view === 'logs'}
+                    collapsed={isMenuCollapsed}
+                    onClick={() => setView('logs')}
+                  />
+                </>
+              )}
+
+              <div className={`mt-6 pt-5 border-t border-zinc-900/50`}>
+                {!isMenuCollapsed && (
+                  <div className="px-3 mb-3 flex items-center gap-2 text-zinc-600 uppercase text-[9px] font-black tracking-widest whitespace-nowrap">
+                    Recentes
+                  </div>
+                )}
+                <div className="space-y-1">
+                  {history.slice(0, 5).map(item => (
+                    <button
+                      key={item.id}
+                      onClick={() => { setActiveDeclaration(item); setView('preview'); }}
+                      className={`relative group w-full flex items-center rounded-xl cursor-pointer transition-all ${isMenuCollapsed ? 'justify-center p-3' : 'p-2.5 gap-3'} ${activeDeclaration?.id === item.id ? 'bg-zinc-100 text-zinc-950 shadow-lg' : 'text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200'}`}
+                    >
+                      <HistoryIcon className="w-4 h-4 shrink-0 opacity-40" />
+                      {!isMenuCollapsed && (
+                        <div className="overflow-hidden text-left whitespace-nowrap">
+                          <div className="text-[11px] font-bold leading-none mb-1 truncate">#{item.number}</div>
+                          <div className="text-[9px] opacity-60 truncate uppercase font-bold">{item.sender.name}</div>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </nav>
+
+            <button
+              onClick={() => setIsMenuCollapsed(!isMenuCollapsed)}
+              className="p-4 border-t border-zinc-900 hover:bg-zinc-900 transition-colors flex items-center justify-center shrink-0 group overflow-hidden"
+            >
+              {isMenuCollapsed ? (
+                <ChevronRightIcon className="w-5 h-5 text-zinc-600 group-hover:text-white transition-colors" />
+              ) : (
+                <div className="flex items-center gap-3 w-full px-3">
+                  <div className="w-10 h-10 bg-zinc-950 text-white rounded-xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                    <UserIcon className="w-5 h-5" />
+                  </div>
+                  <div className="flex flex-col text-left overflow-hidden">
+                    <span className="text-[11px] font-black text-white tracking-widest uppercase truncate">{currentUsername || 'Usuário'}</span>
+                    <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">{userRole === 'master' ? 'Master / Admin' : 'Colaborador'}</span>
+                  </div>
+                </div>
+              )}
+            </button>
+          </aside>
+
+          <div className="flex-1 flex flex-col min-w-0 bg-zinc-50 relative">
+            <header className="no-print sticky top-0 h-16 flex items-center justify-between px-6 bg-white/70 backdrop-blur-xl border-b border-zinc-200/50 z-30">
+              <div className="flex items-center gap-4">
+                <div className="text-[11px] text-zinc-900 font-black uppercase tracking-widest whitespace-nowrap">
+                  {view === 'edit' ? 'Novo Documento' : view === 'consultation' ? 'Histórico' : view === 'users' ? 'Gestão de Usuários' : view === 'logs' ? 'Logs do Sistema' : 'Preview'}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center justify-center w-9 h-9 bg-zinc-100 hover:bg-zinc-950 text-zinc-500 hover:text-white rounded-xl transition-all border border-zinc-200/50 group"
+                  title="Sair do Sistema"
+                >
+                  <LogOutIcon className="w-4 h-4" />
+                </button>
+              </div>
+            </header>
+
+            <main className="flex-1 overflow-y-auto custom-scrollbar bg-zinc-50/50">
+              {view === 'edit' ? (
+                <div className="max-w-5xl mx-auto p-6 md:p-10 pb-20">
+                  <div className="bg-white rounded-[2rem] shadow-xl shadow-zinc-200/50 border border-zinc-200/60 overflow-hidden">
+                    <DeclarationForm
+                      sender={activeDeclaration?.sender || INITIAL_SENDER}
+                      recipient={activeDeclaration?.recipient || INITIAL_RECIPIENT}
+                      carrier={activeDeclaration?.carrier || INITIAL_CARRIER}
+                      equipment={activeDeclaration?.equipment || INITIAL_EQUIPMENT}
+                      onUpdate={handleUpdate}
+                      onGenerate={() => handleGenerate(activeDeclaration || {})}
+                      onPrint={handlePrint}
+                      onDownload={handleDownloadPDF}
+                      onSaveManual={handleSaveManual}
+                      showNotification={showNotification}
+                    />
+                  </div>
+                </div>
+              ) : view === 'consultation' ? (
+                <div className="p-6 md:p-10 pb-20 max-w-6xl mx-auto w-full">
+                  <ConsultationView
+                    history={history}
+                    onSelect={(d) => { setActiveDeclaration(d); setView('preview'); }}
+                    onDelete={deleteFromHistory}
+                    userRole={userRole}
+                  />
+                </div>
+              ) : view === 'users' ? (
+                <div className="p-6 md:p-10 pb-20 max-w-6xl mx-auto w-full">
+                  <UsersView apiUrl={API_URL} />
+                </div>
+              ) : view === 'logs' ? (
+                <div className="p-6 md:p-10 pb-20 max-w-6xl mx-auto w-full">
+                  <LogsView apiUrl={API_URL} />
+                </div>
+              ) : activeDeclaration && (
+                <div className="max-w-[21cm] mx-auto p-6 md:p-10 pb-20 relative">
+                  <div id="declaration-content" className="bg-white shadow-2xl border border-zinc-100 print:border-none print:shadow-none min-h-[29.7cm] rounded-sm transform origin-top md:scale-[0.9] lg:scale-100 transition-transform">
+                    <DeclarationPreview
+                      declaration={activeDeclaration}
+                    />
+                  </div>
+
+                  {/* Floating Action Buttons */}
+                  <div className="no-print fixed bottom-10 right-10 flex flex-col gap-3 z-50">
+                    {userRole === 'master' && (
+                      <ActionButton
+                        icon={<EditIcon className="w-5 h-5" />}
+                        onClick={handleEdit}
+                        title="Editar Declaração"
+                        variant="secondary"
+                      />
+                    )}
+                    <ActionButton
+                      icon={<MailIcon className="w-5 h-5" />}
+                      onClick={handleResendEmail}
+                      title="Enviar por E-mail"
+                      variant="secondary"
+                    />
+                    <ActionButton
+                      icon={<PrinterIcon className="w-5 h-5" />}
+                      onClick={handlePrint}
+                      title="Imprimir Declaração"
+                      variant="secondary"
+                    />
+                    <ActionButton
+                      icon={<DownloadIcon className="w-5 h-5" />}
+                      onClick={handleDownloadPDF}
+                      title="Baixar PDF"
+                      variant="primary"
+                    />
+                  </div>
+                </div>
+              )}
+            </main>
+          </div>
+        </div>
+      )}
+
+      {sigModal.open && (
+        <SignatureModal
+          isOpen={sigModal.open}
+          onClose={() => setSigModal({ open: false, type: null })}
+          onSave={saveSignature}
+          declarationId={activeDeclaration?.id}
+          type={sigModal.type}
+        />
+      )}
+
+      <NotificationModal
+        isOpen={notification.isOpen}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
+        onConfirm={notification.onConfirm}
+        onClose={() => setNotification({ ...notification, isOpen: false })}
+      />
+    </>
+  );
+};
+
+const SidebarItem: React.FC<{ icon: React.ReactNode; label: string; active: boolean; collapsed: boolean; onClick: () => void }> = ({ icon, label, active, collapsed, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`relative group w-full flex items-center transition-all ${collapsed ? 'justify-center p-3.5' : 'p-3 gap-3'} rounded-xl font-bold uppercase tracking-widest text-[10px] ${active ? 'bg-zinc-100 text-zinc-950 shadow-md' : 'text-zinc-500 hover:bg-zinc-900/50 hover:text-zinc-100'}`}
+  >
+    <div className={`shrink-0 transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>{icon}</div>
+    {!collapsed && <span className="whitespace-nowrap overflow-hidden text-left">{label}</span>}
+  </button>
+);
+
+const ActionButton: React.FC<{ icon: React.ReactNode; onClick: () => void; title: string; variant: 'primary' | 'secondary' }> = ({ icon, onClick, title, variant }) => (
+  <button
+    onClick={onClick}
+    title={title}
+    className={`p-4 rounded-2xl shadow-2xl transition-all active:scale-90 flex items-center justify-center ${variant === 'primary' ? 'bg-zinc-950 text-white hover:bg-zinc-800' : 'bg-white text-zinc-900 border border-zinc-200 hover:bg-zinc-50'}`}
+  >
+    {icon}
+  </button>
+);
+
+export default App;

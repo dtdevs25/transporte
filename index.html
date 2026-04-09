@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gerador de Declaração Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+      
+      :root {
+        --zinc-50: #fafafa;
+        --zinc-100: #f4f4f5;
+        --zinc-200: #e4e4e7;
+        --zinc-800: #27272a;
+        --zinc-900: #18181b;
+        --zinc-950: #09090b;
+      }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--zinc-50);
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+      }
+
+      /* Melhorias na Impressão */
+      @media print {
+        @page {
+          margin: 0;
+          size: A4 portrait;
+        }
+        
+        body, html {
+          background: white !important;
+          width: 210mm;
+          height: 297mm;
+        }
+
+        .no-print { 
+          display: none !important; 
+        }
+
+        #root {
+          display: block !important;
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+
+        main {
+          display: block !important;
+          overflow: visible !important;
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+
+        /* Forçar o documento a ocupar a página inteira */
+        .max-w-\[21cm\], 
+        .max-w-4xl {
+          max-width: none !important;
+          width: 100% !important;
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+
+        #declaration-content {
+          border: none !important;
+          box-shadow: none !important;
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          transform: none !important;
+        }
+
+        /* Ajustes específicos para garantir que o texto saia preto no branco */
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      }
+
+      .signature-canvas {
+        touch-action: none;
+        cursor: crosshair;
+      }
+
+      /* Scrollbar Customizada */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 5px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+      }
+      .bg-zinc-950 .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      /* Transições Suaves */
+      .transition-sidebar {
+        transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+      }
+    </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "react/": "https://esm.sh/react@^19.2.4/",
+        "react": "https://esm.sh/react@^19.2.4",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+        "lucide-react": "https://esm.sh/lucide-react@^0.564.0"
+      }
+    }
+    </script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-zinc-50 text-zinc-900">
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
