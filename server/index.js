@@ -230,37 +230,13 @@ app.post('/api/declarations', async (req, res) => {
             if (userEmail) {
                 console.log(`E-mail do usuário encontrado: ${userEmail}`);
                 
+                const normalizedUserEmail = userEmail.toLowerCase().trim();
+                
                 // Fetch all Master users to add them in CC
                 const mastersResult = await pool.query("SELECT email FROM users WHERE role = 'master'");
-                const masterEmails = mastersResult.rows
-                    .map(r => r.email)
-                    .filter(e => e && e !== userEmail); // Avoid sending twice to the same user
-
-                const emailHtml = `
-                    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
-                        <div style="background: #000; color: #fff; padding: 30px; text-align: center;">
-                            <h2 style="margin: 0; text-transform: uppercase; letter-spacing: 2px;">DocTransporte</h2>
-                            <p style="margin: 10px 0 0; opacity: 0.7;">Nova Declaração Gerada</p>
-                        </div>
-                        <div style="padding: 40px; color: #333; line-height: 1.6;">
-                            <p>Olá <strong>${usernameForLog}</strong>,</p>
-                            <p>Uma nova declaração de transporte foi gerada com sucesso no sistema.</p>
-                            
-                            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 25px 0;">
-                                <table style="width: 100%;">
-                                    <tr><td style="color: #888; padding-bottom: 5px;">Número:</td><td style="font-weight: bold;">#${number}</td></tr>
-                                    <tr><td style="color: #888; padding-bottom: 5px;">Data:</td><td style="font-weight: bold;">${date}</td></tr>
-                                    <tr><td style="color: #888; padding-bottom: 5px;">Cidade:</td><td style="font-weight: bold;">${city}</td></tr>
-                                    <tr><td style="color: #888; padding-bottom: 5px;">Destinatário:</td><td style="font-weight: bold;">${recipient.name}</td></tr>
-                                </table>
-                            </div>
-                            
-                            <p>O documento PDF está anexado a este e-mail e também disponível no histórico.</p>
-                            <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
-                            <p style="font-size: 12px; color: #888; text-align: center;">Este é um e-mail automático, por favor não responda.</p>
-                        </div>
-                    </div>
-                `;
+                const masterEmails = [...new Set(mastersResult.rows
+                    .map(r => r.email?.toLowerCase().trim())
+                    .filter(e => e && e !== normalizedUserEmail))];
 
                 // Handle filename generation for attachment
                 const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -274,23 +250,84 @@ app.post('/api/declarations', async (req, res) => {
                 const company = sender.companyName || 'GE Vernova';
                 const finalFilename = `SR - ${ritm} - DNI ${number} – ${company} - Reversa – ${dateStr}.pdf`;
 
+                const emailHtml = `
+                    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; color: #1a202c;">
+                        <div style="padding: 40px 0; text-align: center; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);">
+                            <img src="cid:logo" alt="DNIGen" style="height: 60px; width: auto; margin-bottom: 20px;">
+                            <h2 style="margin: 0; color: #0f172a; font-size: 24px; font-weight: 800; letter-spacing: -0.025em;">Declaração de Transporte</h2>
+                            <p style="margin: 8px 0 0; color: #64748b; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">DNI #${number}</p>
+                        </div>
+                        
+                        <div style="padding: 40px; border-bottom: 1px solid #f1f5f9;">
+                            <p style="margin-top: 0; font-size: 16px;">Olá <strong>${usernameForLog}</strong>,</p>
+                            <p style="color: #475569; font-size: 15px; line-height: 1.6;">Uma nova declaração de transporte foi gerada com sucesso. Abaixo estão os detalhes principais para sua conferência rápida:</p>
+                            
+                            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin: 24px 0;">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <tr>
+                                        <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600; width: 100px;">RITM:</td>
+                                        <td style="padding: 8px 0; color: #0f172a; font-size: 14px; font-weight: 700;">${ritm}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600;">Data:</td>
+                                        <td style="padding: 8px 0; color: #0f172a; font-size: 14px; font-weight: 700;">${date}</td>
+                                    </tr>
+                                    <tr><td colspan="2" style="padding: 8px 0;"><div style="border-top: 1px solid #e2e8f0;"></div></td></tr>
+                                    <tr>
+                                        <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600;">Remetente:</td>
+                                        <td style="padding: 8px 0; color: #0f172a; font-size: 14px; font-weight: 700;">${sender.name}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600;">Empresa:</td>
+                                        <td style="padding: 8px 0; color: #0f172a; font-size: 14px; font-weight: 700;">${company}</td>
+                                    </tr>
+                                    <tr><td colspan="2" style="padding: 8px 0;"><div style="border-top: 1px solid #e2e8f0;"></div></td></tr>
+                                    <tr>
+                                        <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600;">Destinatário:</td>
+                                        <td style="padding: 8px 0; color: #0f172a; font-size: 14px; font-weight: 700;">${recipient.name}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600;">Município:</td>
+                                        <td style="padding: 8px 0; color: #0f172a; font-size: 14px; font-weight: 700;">${city} / ${sender.state}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 0;">
+                                O documento PDF original foi anexado a este e-mail conforme as normas de transporte. Ele também está arquivado em sua base de dados no sistema.
+                            </p>
+                        </div>
+                        
+                        <div style="padding: 30px; background-color: #f8fafc; text-align: center;">
+                            <p style="margin: 0; font-size: 12px; color: #94a3b8; font-weight: 500;">
+                                Sistema DNIGen &copy; ${new Date().getFullYear()} – Gestão Inteligente de Logística Reversa
+                            </p>
+                        </div>
+                    </div>
+                `;
+
                 const mailOptions = {
-                    from: `"DocTransporte" <${process.env.SMTP_USER}>`,
+                    from: `"DNIGen" <${process.env.SMTP_USER}>`,
                     to: userEmail,
                     cc: masterEmails.join(', '),
                     subject: `Declaração de Transporte #${number} - ${recipient.name}`,
-                    html: emailHtml
+                    html: emailHtml,
+                    attachments: [
+                        {
+                            filename: 'logo.png',
+                            path: path.join(__dirname, '../public/LOGOS/LogoPrincipal.png'),
+                            cid: 'logo'
+                        }
+                    ]
                 };
 
                 if (pdfBase64) {
                     console.log('Anexando PDF em Base64...');
-                    mailOptions.attachments = [
-                        {
-                            filename: finalFilename,
-                            content: pdfBase64.split('base64,')[1] || pdfBase64,
-                            encoding: 'base64'
-                        }
-                    ];
+                    mailOptions.attachments.push({
+                        filename: finalFilename,
+                        content: pdfBase64.split('base64,')[1] || pdfBase64,
+                        encoding: 'base64'
+                    });
                 }
 
                 const info = await transporter.sendMail(mailOptions);
