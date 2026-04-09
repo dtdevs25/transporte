@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlusIcon, Trash2Icon, UserIcon, ShieldIcon, LoaderIcon, PencilIcon } from 'lucide-react';
+import { UserPlusIcon, Trash2Icon, UserIcon, ShieldIcon, LoaderIcon, PencilIcon, MailIcon, XIcon } from 'lucide-react';
 
 interface User {
     id: number;
@@ -17,6 +17,7 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isReseting, setIsReseting] = useState<{ [key: number]: boolean }>({});
     const [error, setError] = useState('');
     const [showForm, setShowForm] = useState(false);
     const [newUser, setNewUser] = useState({ username: '', password: '', role: 'user' as 'master' | 'user', email: '' });
@@ -90,20 +91,44 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
         }
     };
 
+    const handleSendResetEmail = async (user: User) => {
+        if (!user.email) {
+            alert('Usuário não possui e-mail cadastrado.');
+            return;
+        }
+        
+        setIsReseting(prev => ({ ...prev, [user.id]: true }));
+        try {
+            const response = await fetch(`${apiUrl}/users/${user.id}/reset-password-email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (response.ok) {
+                alert(`E-mail de redefinição enviado para ${user.username} (${user.email})`);
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Erro ao enviar e-mail');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Erro de conexão');
+        } finally {
+            setIsReseting(prev => ({ ...prev, [user.id]: false }));
+        }
+    };
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div>
                     <h2 className="text-3xl font-black text-zinc-900 tracking-tight">Gestão de Usuários</h2>
-                    <p className="text-zinc-500 font-medium mt-1">
-                        {editingUserId ? `Editando o usuário: ${newUser.username}` : 'Cadastre e gerencie os acessos ao sistema.'}
-                    </p>
+                    <p className="text-zinc-500 font-medium mt-1">Cadastre e gerencie os acessos ao sistema.</p>
                 </div>
                 <button
                     onClick={() => {
                         setEditingUserId(null);
                         setNewUser({ username: '', password: '', role: 'user', email: '' });
-                        setShowForm(!showForm);
+                        setShowForm(true);
                     }}
                     className="flex items-center gap-2 px-6 py-3.5 bg-zinc-950 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-xl shadow-zinc-200"
                 >
@@ -112,74 +137,86 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
                 </button>
             </div>
 
+            {/* Modal de Cadastro */}
             {showForm && (
-                <div className="bg-white p-8 rounded-[2.5rem] border-2 border-zinc-100 shadow-xl animate-in slide-in-from-top-4 duration-300">
-                    <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Usuário</label>
-                            <input
-                                required
-                                type="text"
-                                value={newUser.username}
-                                onChange={e => setNewUser({ ...newUser, username: e.target.value })}
-                                className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl outline-none focus:ring-2 focus:ring-zinc-900 transition-all font-medium"
-                                placeholder="Identificador"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-                                {editingUserId ? 'Nova Senha (opcional)' : 'Senha'}
-                            </label>
-                            <input
-                                required={!editingUserId}
-                                type="password"
-                                value={newUser.password}
-                                onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                                className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl outline-none focus:ring-2 focus:ring-zinc-900 transition-all font-medium"
-                                placeholder="••••••••"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Nível de Acesso</label>
-                            <select
-                                value={newUser.role}
-                                onChange={e => setNewUser({ ...newUser, role: e.target.value as any })}
-                                className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl outline-none focus:ring-2 focus:ring-zinc-900 transition-all font-medium appearance-none"
-                            >
-                                <option value="user">Usuário Comum</option>
-                                <option value="master">Administrador (Master)</option>
-                            </select>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">E-mail</label>
-                            <input
-                                required
-                                type="email"
-                                value={newUser.email}
-                                onChange={e => setNewUser({ ...newUser, email: e.target.value })}
-                                className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl outline-none focus:ring-2 focus:ring-zinc-900 transition-all font-medium"
-                                placeholder="usuario@ctdi.com"
-                            />
-                        </div>
-                        <div className="md:col-span-3 flex justify-end gap-3 mt-2">
-                            <button
-                                type="button"
-                                onClick={() => setShowForm(false)}
-                                className="px-6 py-3 text-zinc-500 font-bold uppercase text-[10px] tracking-widest hover:text-zinc-900 transition-colors"
-                            >
-                                Cancelar
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm" onClick={() => setShowForm(false)} />
+                    <div className="relative bg-white w-full max-w-lg rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <header className="flex justify-between items-center mb-8">
+                            <div>
+                                <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tight">
+                                    {editingUserId ? 'Editar Usuário' : 'Novo Usuário'}
+                                </h3>
+                                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1">Informações de acesso</p>
+                            </div>
+                            <button onClick={() => setShowForm(false)} className="p-2 hover:bg-zinc-100 rounded-full transition-colors">
+                                <XIcon className="w-6 h-6 text-zinc-400" />
                             </button>
+                        </header>
+
+                        <form onSubmit={handleCreateUser} className="space-y-6">
+                            <div className="grid grid-cols-1 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Usuário</label>
+                                    <input
+                                        required
+                                        type="text"
+                                        value={newUser.username}
+                                        onChange={e => setNewUser({ ...newUser, username: e.target.value })}
+                                        className="w-full px-5 py-3.5 bg-zinc-50 border border-zinc-100 rounded-2xl outline-none focus:ring-2 focus:ring-zinc-900 transition-all font-medium"
+                                        placeholder="Nome de identificação"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">E-mail Corporativo</label>
+                                    <input
+                                        required
+                                        type="email"
+                                        value={newUser.email}
+                                        onChange={e => setNewUser({ ...newUser, email: e.target.value })}
+                                        className="w-full px-5 py-3.5 bg-zinc-50 border border-zinc-200 rounded-2xl outline-none focus:ring-2 focus:ring-zinc-900 transition-all font-medium"
+                                        placeholder="usuario@ctdi.com"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Acesso</label>
+                                        <select
+                                            value={newUser.role}
+                                            onChange={e => setNewUser({ ...newUser, role: e.target.value as any })}
+                                            className="w-full px-5 py-3.5 bg-zinc-50 border border-zinc-100 rounded-2xl outline-none focus:ring-2 focus:ring-zinc-900 transition-all font-medium appearance-none"
+                                        >
+                                            <option value="user">Comum</option>
+                                            <option value="master">Admin</option>
+                                        </select>
+                                    </div>
+                                    {editingUserId && (
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Senha (opc)</label>
+                                            <input
+                                                type="password"
+                                                value={newUser.password}
+                                                onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                                                className="w-full px-5 py-3.5 bg-zinc-50 border border-zinc-100 rounded-2xl outline-none focus:ring-2 focus:ring-zinc-900 transition-all font-medium"
+                                                placeholder="••••••••"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {error && <p className="text-red-500 text-[10px] font-black uppercase text-center bg-red-50 py-2 rounded-xl">{error}</p>}
+
                             <button
                                 disabled={isSaving}
                                 type="submit"
-                                className="px-8 py-3 bg-zinc-900 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-zinc-800 transition-all disabled:opacity-50 flex items-center gap-2"
+                                className="w-full py-4 bg-zinc-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-zinc-800 transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-xl shadow-zinc-200"
                             >
-                                {isSaving && <LoaderIcon className="w-3 h-3 animate-spin" />}
-                                Salvar {editingUserId ? 'Alterações' : 'Usuário'}
+                                {isSaving ? <LoaderIcon className="w-4 h-4 animate-spin" /> : <ShieldIcon className="w-4 h-4" />}
+                                {editingUserId ? 'Salvar Alterações' : 'Criar Conta e Enviar Convite'}
                             </button>
-                        </div>
-                    </form>
-                    {error && <p className="mt-4 text-red-500 text-[10px] font-black uppercase text-center">{error}</p>}
+                        </form>
+                    </div>
                 </div>
             )}
 
@@ -229,12 +266,20 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
                                         <td className="px-8 py-6 text-right">
                                             <div className="flex justify-end gap-2">
                                                 <button
+                                                    onClick={() => handleSendResetEmail(user)}
+                                                    disabled={isReseting[user.id]}
+                                                    className="p-3 bg-white hover:bg-[#0078d4] text-[#0078d4] hover:text-white rounded-xl shadow-sm border border-zinc-100 transition-all disabled:opacity-50"
+                                                    title="Enviar e-mail de redefinição"
+                                                >
+                                                    {isReseting[user.id] ? <LoaderIcon className="w-5 h-5 animate-spin" /> : <MailIcon className="w-5 h-5" />}
+                                                </button>
+                                                <button
                                                     onClick={() => {
                                                         setEditingUserId(user.id);
                                                         setNewUser({ username: user.username, password: '', role: user.role, email: user.email });
                                                         setShowForm(true);
                                                     }}
-                                                    className="p-3 bg-white hover:bg-zinc-950 text-[#0078d4] hover:text-white rounded-xl shadow-sm border border-zinc-100 transition-all"
+                                                    className="p-3 bg-white hover:bg-zinc-950 text-zinc-400 hover:text-white rounded-xl shadow-sm border border-zinc-100 transition-all"
                                                     title="Editar Usuário"
                                                 >
                                                     <PencilIcon className="w-5 h-5" />

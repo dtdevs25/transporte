@@ -622,6 +622,68 @@ app.post('/api/reset-password', async (req, res) => {
     }
 });
 
+app.post('/api/users/:id/reset-password-email', authLimiter, async (req, res) => {
+    const { id } = req.params;
+    const adminUsername = req.headers['x-username'] || 'admin';
+    try {
+        const userResult = await pool.query('SELECT username, email FROM users WHERE id = $1', [id]);
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuário não encontrado.' });
+        }
+
+        const user = userResult.rows[0];
+        if (!user.email) {
+            return res.status(400).json({ error: 'Usuário não possui e-mail cadastrado.' });
+        }
+
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiry = new Date(Date.now() + 3600000); // 1 hour
+
+        await pool.query('UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE id = $3', [token, expiry, id]);
+
+        const resetLink = `${req.headers.origin || 'http://localhost:5173'}?token=${token}&view=reset-password`;
+
+        const emailHtml = `
+            <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff; color: #1a202c;">
+                <div style="padding: 25px 0; text-align: center; background: #f8fafc;">
+                    <img src="cid:logo" alt="DNIGen" style="height: 45px; width: auto; margin-bottom: 10px;">
+                    <h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 800;">Redefinição de Senha</h2>
+                </div>
+                <div style="padding: 30px; text-align: center;">
+                    <p style="font-size: 14px; color: #475569;">Olá <strong>${escapeHtml(user.username)}</strong>, o administrador solicitou a redefinição de sua senha.</p>
+                    <a href="${resetLink}" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; margin: 20px 0;">Redefinir Senha</a>
+                    <p style="color: #64748b; font-size: 11px;">Este link expira em 1 hora.</p>
+                </div>
+            </div>
+        `;
+
+        // Resolve logo path
+        let logoPath = path.join(__dirname, '../public/LOGOS/LogoPrincipal.png');
+        if (process.env.NODE_ENV === 'production') {
+            logoPath = path.join(__dirname, '../dist/LOGOS/LogoPrincipal.png');
+        }
+
+        const attachments = [];
+        if (fs.existsSync(logoPath)) {
+            attachments.push({ filename: 'logo.png', path: logoPath, cid: 'logo' });
+        }
+
+        await transporter.sendMail({
+            from: `"DNIGen" <${process.env.SMTP_USER}>`,
+            to: user.email,
+            subject: 'Redefinição de Senha - DNIGen',
+            html: emailHtml,
+            attachments: attachments
+        });
+
+        await createLog(adminUsername, 'RESET_PASSWORD', 'USER', id, `Disparou e-mail de redefinição para ${user.username}`);
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao processar solicitação' });
+    }
+});
+
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });

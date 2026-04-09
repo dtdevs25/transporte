@@ -697,7 +697,7 @@ const App: React.FC = () => {
                         {showPassword ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
                       </button>
                     </div>
-                    <div className="flex justify-start px-1 pt-1">
+                    <div className="flex justify-end px-1 pt-1">
                       <button
                         type="button"
                         onClick={() => setView('forgot-password')}
