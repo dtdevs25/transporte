@@ -554,103 +554,78 @@ const App: React.FC = () => {
         </div>
       ) : (
         <div className="h-screen flex flex-col bg-zinc-50 overflow-hidden font-['Segoe_UI']">
-          {/* Header Superior Fixo Lateral-a-Lateral */}
-          <header className="no-print h-20 bg-white border-b border-zinc-200 flex items-center justify-between px-8 z-50 shrink-0 shadow-sm">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-4">
-                 <img src="/LOGOS/LogoPrincipal.png" alt="DNIGen" className="h-10 w-auto" />
-                 <div className="h-8 w-px bg-zinc-200 hidden md:block"></div>
-                 <div className="hidden md:block">
-                    <h1 className="text-lg font-black tracking-tight text-zinc-900 leading-none">DNIGen</h1>
-                    <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-1">Declaração de Transporte</p>
-                 </div>
-              </div>
-              <button
-                onClick={() => setIsMenuCollapsed(!isMenuCollapsed)}
-                className="p-2 hover:bg-zinc-100 rounded-xl text-zinc-400 transition-colors"
-              >
-                <MenuIcon size={20} />
-              </button>
+          {/* Header Minimalista */}
+          <header className="no-print h-16 bg-white border-b border-zinc-200 flex items-center justify-between px-8 z-50 shrink-0 shadow-sm">
+            <div className="flex items-center">
+               <img src="/LOGOS/LogoPrincipal.png" alt="DNIGen" className="h-9 w-auto" />
             </div>
 
-            <div className="flex items-center gap-6">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-zinc-50 rounded-full border border-zinc-200 shadow-sm">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-tight">Sistema Online</span>
-              </div>
-              
-              <div className="flex items-center gap-4 border-l border-zinc-100 pl-6">
-                <div className="text-right hidden sm:block">
-                   <p className="text-[11px] font-black text-zinc-900 tracking-widest uppercase leading-none">{currentUsername}</p>
-                   <p className="text-[9px] font-bold text-[#0078d4] uppercase tracking-widest mt-1">{userRole === 'master' ? 'Master / Admin' : 'Colaborador'}</p>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center justify-center w-10 h-10 bg-zinc-50 hover:bg-red-50 text-zinc-400 hover:text-red-500 rounded-xl transition-all border border-zinc-200 shadow-sm group"
-                  title="Sair"
-                >
-                  <LogOutIcon className="w-4 h-4 transition-transform group-hover:scale-110" />
-                </button>
-              </div>
-            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center justify-center p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+              title="Sair"
+            >
+              <LogOutIcon className="w-5 h-5" />
+              <span className="ml-2 text-[10px] font-black uppercase tracking-widest hidden sm:block">Sair</span>
+            </button>
           </header>
 
-          <div className="flex-1 flex overflow-hidden">
-            {/* Sidebar abaixo do Header */}
+          <div className="flex-1 flex overflow-hidden relative">
+            {/* Sidebar acinzentado e retrátil */}
             <aside
-              className={`no-print bg-white h-full transition-all duration-300 flex flex-col z-40 border-r border-zinc-200 shrink-0 overflow-hidden ${isMenuCollapsed ? 'w-20' : 'w-72'}`}
+              className={`no-print bg-zinc-100 h-full transition-all duration-300 flex flex-col z-40 border-r border-zinc-200 shrink-0 overflow-hidden relative ${isMenuCollapsed ? 'w-0' : 'w-72'}`}
             >
-              <nav className="flex-1 p-4 space-y-2 overflow-y-auto overflow-x-hidden custom-scrollbar mt-4">
+              <nav className="flex-1 p-6 space-y-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
                 <SidebarItem
                   icon={<PlusIcon className="w-5 h-5" />}
                   label="Nova Declaração"
                   active={view === 'edit'}
-                  collapsed={isMenuCollapsed}
+                  collapsed={false}
                   onClick={() => { setView('edit'); setActiveDeclaration(null); }}
                 />
                 <SidebarItem
                   icon={<SearchIcon className="w-5 h-5" />}
                   label="Base de Dados"
                   active={view === 'consultation'}
-                  collapsed={isMenuCollapsed}
+                  collapsed={false}
                   onClick={() => setView('consultation')}
                 />
                 {userRole === 'master' && (
                   <>
-                    <div className={`pt-6 pb-2 px-4 ${isMenuCollapsed ? 'hidden' : 'block'}`}>
-                      <span className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">Administração</span>
+                    <div className="pt-6 pb-2 px-4">
+                      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Administração</span>
                     </div>
                     <SidebarItem
                       icon={<UserIcon className="w-5 h-5" />}
                       label="Controle de Usuários"
                       active={view === 'users'}
-                      collapsed={isMenuCollapsed}
+                      collapsed={false}
                       onClick={() => setView('users')}
                     />
                     <SidebarItem
                       icon={<ShieldIcon className="w-5 h-5" />}
                       label="Logs de Auditoria"
                       active={view === 'logs'}
-                      collapsed={isMenuCollapsed}
+                      collapsed={false}
                       onClick={() => setView('logs')}
                     />
                   </>
                 )}
 
                 {!isMenuCollapsed && history.length > 0 && (
-                   <div className="mt-8 pt-6 border-t border-zinc-50">
+                   <div className="mt-8 pt-6 border-t border-zinc-200">
                       <div className="px-4 mb-3 text-zinc-400 uppercase text-[9px] font-black tracking-widest">Recentes</div>
-                      <div className="space-y-1 px-2">
+                      <div className="space-y-1">
                         {history.slice(0, 3).map(item => (
                           <button
                             key={item.id}
                             onClick={() => { setActiveDeclaration(item); setView('preview'); }}
-                            className="w-full p-2.5 rounded-xl text-left hover:bg-zinc-50 transition-all group flex items-center gap-3"
+                            className="w-full p-2.5 rounded-xl text-left hover:bg-zinc-200/50 transition-all group flex items-center gap-3"
                           >
-                            <HistoryIcon className="w-4 h-4 text-zinc-300" />
+                            <HistoryIcon className="w-4 h-4 text-zinc-400" />
                             <div className="min-w-0">
                               <div className="text-[10px] font-black text-zinc-900 truncate tracking-tight">#{item.number}</div>
-                              <div className="text-[9px] text-zinc-400 truncate uppercase font-bold tracking-tighter">{item.sender.name}</div>
+                              <div className="text-[9px] text-zinc-500 truncate uppercase font-bold tracking-tighter">{item.sender.name}</div>
                             </div>
                           </button>
                         ))}
@@ -659,15 +634,37 @@ const App: React.FC = () => {
                 )}
               </nav>
 
-              <div className="p-4 border-t border-zinc-100 bg-zinc-50/50">
-                <p className={`text-[8px] font-black text-zinc-300 uppercase tracking-[0.2em] text-center ${isMenuCollapsed ? 'hidden' : 'block'}`}>
-                  DNIGen v2.0 Enterprise
+              {/* Informações do Usuário no rodapé do Sidebar */}
+              <div className="p-6 border-t border-zinc-200 bg-zinc-200/20">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-zinc-300 flex items-center justify-center text-zinc-600 shadow-inner overflow-hidden border border-zinc-100">
+                    <UserIcon className="w-5 h-5" />
+                  </div>
+                  <div className="flex flex-col text-left overflow-hidden">
+                    <span className="text-[11px] font-black text-zinc-900 tracking-widest uppercase truncate">{currentUsername}</span>
+                    <span className="text-[9px] font-bold text-[#0078d4] uppercase tracking-widest">{userRole === 'master' ? 'Master / Admin' : 'Colaborador'}</span>
+                  </div>
+                </div>
+                <p className="text-[8px] font-black text-zinc-400 uppercase tracking-[0.2em] text-center mt-6">
+                  DNIGen v2.5 Enterprise
                 </p>
               </div>
             </aside>
 
-            {/* Conteúdo Principal Unificado */}
-            <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#f8f9fa] p-8 pb-24">
+            {/* Setinha de toggle entre sidebar e main */}
+            <button
+              onClick={() => setIsMenuCollapsed(!isMenuCollapsed)}
+              className={`no-print absolute top-10 flex items-center justify-center w-6 h-12 bg-white border border-zinc-200 rounded-r-lg shadow-md z-50 transition-all duration-300 hover:bg-zinc-50 ${isMenuCollapsed ? 'left-0' : 'left-72'}`}
+            >
+              {isMenuCollapsed ? (
+                <ChevronRightIcon className="w-4 h-4 text-zinc-400" />
+              ) : (
+                <ChevronLeftIcon className="w-4 h-4 text-zinc-400" />
+              )}
+            </button>
+
+            {/* Conteúdo Principal */}
+            <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#f8f9fa] p-8 pb-24 transition-all duration-300">
               <div className="max-w-[1400px] mx-auto">
                 <div className="mb-8 flex items-center justify-between no-print">
                    <div className="text-[11px] text-zinc-500 font-bold uppercase tracking-[0.3em]">
@@ -749,6 +746,7 @@ const App: React.FC = () => {
             </main>
           </div>
         </div>
+
       )}
 
       {sigModal.open && (
