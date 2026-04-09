@@ -844,7 +844,7 @@ const App: React.FC = () => {
                     userRole={userRole}
                   />
                 ) : view === 'users' ? (
-                  <UsersView apiUrl={API_URL} />
+                  <UsersView apiUrl={API_URL} showNotification={showNotification} />
                 ) : view === 'logs' ? (
                   <LogsView apiUrl={API_URL} />
                 ) : (view === 'preview' || view === 'signature-mode') && activeDeclaration ? (

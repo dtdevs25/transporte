@@ -11,9 +11,10 @@ interface User {
 
 interface Props {
     apiUrl: string;
+    showNotification: (title: string, message: string, type?: 'info' | 'success' | 'error' | 'warning', onConfirm?: () => void) => void;
 }
 
-export const UsersView: React.FC<Props> = ({ apiUrl }) => {
+export const UsersView: React.FC<Props> = ({ apiUrl, showNotification }) => {
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -75,25 +76,32 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
 
     const handleDeleteUser = async (id: number, username: string) => {
         if (username === 'admin') {
-            alert('O usuário administrador principal não pode ser excluído.');
+            showNotification('Ação Negada', 'O usuário administrador principal não pode ser excluído.', 'warning');
             return;
         }
-        if (!confirm(`Deseja realmente excluir o usuário ${username}?`)) return;
-
-        try {
-            const response = await fetch(`${apiUrl}/users/${id}`, { method: 'DELETE' });
-            if (response.ok) {
-                setUsers(prev => prev.filter(u => u.id !== id));
+        
+        showNotification(
+            'Confirmar Exclusão',
+            `Deseja realmente excluir o usuário ${username}? Esta ação não pode ser desfeita.`,
+            'warning',
+            async () => {
+                try {
+                    const response = await fetch(`${apiUrl}/users/${id}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        setUsers(prev => prev.filter(u => u.id !== id));
+                        showNotification('Sucesso', 'Usuário excluído com sucesso.', 'success');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    showNotification('Erro', 'Houve um problema ao excluir o usuário.', 'error');
+                }
             }
-        } catch (err) {
-            console.error(err);
-            alert('Erro ao excluir usuário');
-        }
+        );
     };
 
     const handleSendResetEmail = async (user: User) => {
         if (!user.email) {
-            alert('Usuário não possui e-mail cadastrado.');
+            showNotification('E-mail Ausente', 'Este usuário não possui um endereço de e-mail cadastrado.', 'warning');
             return;
         }
         
@@ -104,14 +112,18 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
                 headers: { 'Content-Type': 'application/json' }
             });
             if (response.ok) {
-                alert(`E-mail de redefinição enviado para ${user.username} (${user.email})`);
+                showNotification(
+                    'E-mail Enviado',
+                    `Um link de redefinição de senha foi enviado com sucesso para ${user.username} (${user.email}).`,
+                    'success'
+                );
             } else {
                 const data = await response.json();
-                alert(data.error || 'Erro ao enviar e-mail');
+                showNotification('Erro no Envio', data.error || 'Não foi possível enviar o e-mail.', 'error');
             }
         } catch (err) {
             console.error(err);
-            alert('Erro de conexão');
+            showNotification('Erro de Conexão', 'Não foi possível conectar ao servidor.', 'error');
         } finally {
             setIsReseting(prev => ({ ...prev, [user.id]: false }));
         }
