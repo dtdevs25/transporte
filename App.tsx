@@ -36,6 +36,7 @@ import { SignatureModal } from './components/SignatureModal';
 import { UsersView } from './components/UsersView';
 import { NotificationModal, NotificationType } from './components/NotificationModal';
 import { LogsView } from './components/LogsView';
+import { SmartImportModal } from './components/SmartImportModal';
 
 const INITIAL_SENDER: SenderData = {
   name: '',
@@ -91,6 +92,7 @@ const App: React.FC = () => {
   const [isMenuCollapsed, setIsMenuCollapsed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isSmartModalOpen, setIsSmartModalOpen] = useState(false);
 
   // Notification Modal State
   const [notification, setNotification] = useState<{
@@ -653,7 +655,7 @@ const App: React.FC = () => {
             {/* Marcador de Seta (Bolinha flutuante) */}
             <button
               onClick={() => setIsMenuCollapsed(!isMenuCollapsed)}
-              className={`no-print absolute top-10 flex items-center justify-center w-8 h-8 bg-white border border-zinc-200 rounded-full shadow-lg z-50 transition-all duration-300 hover:scale-110 hover:bg-zinc-50 -ml-4 ${isMenuCollapsed ? 'left-20' : 'left-72'}`}
+              className={`no-print absolute top-32 flex items-center justify-center w-8 h-8 bg-white border border-zinc-200 rounded-full shadow-lg z-50 transition-all duration-300 hover:scale-110 hover:bg-zinc-50 -ml-4 ${isMenuCollapsed ? 'left-20' : 'left-72'}`}
             >
               {isMenuCollapsed ? (
                 <ChevronRightIcon className="w-4 h-4 text-zinc-600" />
@@ -677,6 +679,7 @@ const App: React.FC = () => {
                       onUpdate={handleUpdate}
                       onGenerate={() => handleGenerate(activeDeclaration!)}
                       showNotification={showNotification}
+                      onOpenSmartImport={() => setIsSmartModalOpen(true)}
                     />
                   </div>
                 ) : view === 'consultation' ? (
@@ -759,6 +762,14 @@ const App: React.FC = () => {
         onConfirm={notification.onConfirm}
         onClose={() => setNotification({ ...notification, isOpen: false })}
       />
+
+      {isSmartModalOpen && (
+        <SmartImportModal
+          isOpen={isSmartModalOpen}
+          onClose={() => setIsSmartModalOpen(false)}
+          onImport={handleUpdate}
+        />
+      )}
     </>
   );
 };

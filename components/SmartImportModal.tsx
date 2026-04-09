@@ -231,7 +231,7 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
                     </div>
 
                     <textarea
-                        className="w-full h-48 p-6 bg-zinc-50 border-2 border-zinc-100 rounded-3xl outline-none focus:border-zinc-900 focus:bg-white transition-all font-mono text-sm resize-none"
+                        className="w-full h-32 p-6 bg-zinc-50 border-2 border-zinc-100 rounded-3xl outline-none focus:border-zinc-900 focus:bg-white transition-all font-mono text-sm resize-none"
                         placeholder="Cole aqui os dados copiados do sistema..."
                         value={text}
                         onChange={(e) => setText(e.target.value)}

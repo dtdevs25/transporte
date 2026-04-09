@@ -34,6 +34,7 @@ interface Props {
   onDownload?: () => void;
   onSaveManual?: () => void;
   showNotification: (title: string, message: string, type?: NotificationType, onConfirm?: () => void) => void;
+  onOpenSmartImport: () => void;
 }
 
 export const DeclarationForm: React.FC<Props> = ({
@@ -46,10 +47,10 @@ export const DeclarationForm: React.FC<Props> = ({
   onPrint,
   onDownload,
   onSaveManual,
-  showNotification
+  showNotification,
+  onOpenSmartImport
 }) => {
   const [step, setStep] = useState(1);
-  const [isSmartModalOpen, setIsSmartModalOpen] = useState(false);
   const [isSearchingCep, setIsSearchingCep] = useState(false);
   const [isSearchingCnpj, setIsSearchingCnpj] = useState(false);
 
@@ -324,7 +325,7 @@ export const DeclarationForm: React.FC<Props> = ({
                 <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest">Remetente (Pessoa Física ou Jurídica)</h3>
               </div>
               <div className="flex gap-4">
-                <button type="button" onClick={() => setIsSmartModalOpen(true)} className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-white text-[#0078d4] border border-[#0078d4] hover:bg-blue-50 rounded-xl transition-all shadow-sm">
+                <button type="button" onClick={onOpenSmartImport} className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-white text-[#0078d4] border border-[#0078d4] hover:bg-blue-50 rounded-xl transition-all shadow-sm">
                   <SparklesIcon className="w-4 h-4" /> Importação Inteligente
                 </button>
                 <button type="button" onClick={handleClear} className="flex items-center gap-2 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
@@ -551,12 +552,6 @@ export const DeclarationForm: React.FC<Props> = ({
           </button>
         )}
       </div>
-
-      <SmartImportModal
-        isOpen={isSmartModalOpen}
-        onClose={() => setIsSmartModalOpen(false)}
-        onImport={handleSmartImport}
-      />
     </div>
   );
 };
