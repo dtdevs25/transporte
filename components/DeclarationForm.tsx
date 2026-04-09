@@ -290,21 +290,24 @@ export const DeclarationForm: React.FC<Props> = ({
       <div className="flex items-center justify-between max-w-4xl mx-auto mb-10">
         {steps.map((s, idx) => {
           const isAllowed = canNavigateTo(s.id);
+          const isActive = step === s.id;
+          const isCompleted = step > s.id;
+
           return (
             <React.Fragment key={s.id}>
               <button
                 type="button"
                 disabled={!isAllowed}
                 onClick={() => setStep(s.id)}
-                className={`flex flex-col items-center gap-2 group transition-all ${step === s.id ? 'opacity-100' : isAllowed ? 'opacity-40 hover:opacity-70' : 'opacity-10 cursor-not-allowed'}`}
+                className={`flex flex-col items-center gap-2 group transition-all ${isActive ? 'opacity-100' : isAllowed ? 'opacity-70 hover:opacity-100' : 'opacity-40 cursor-not-allowed'}`}
               >
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm border ${step === s.id ? 'bg-[#0078d4] text-white border-[#0078d4] scale-110' : 'bg-white text-zinc-400 border-zinc-200'}`}>
-                  {step > s.id ? <CheckCircle2Icon className="w-6 h-6" /> : s.icon}
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm border ${isActive ? 'bg-[#0078d4] text-white border-[#0078d4] scale-110 shadow-lg shadow-blue-200' : isCompleted ? 'bg-blue-50 text-[#0078d4] border-blue-100' : 'bg-white text-zinc-500 border-zinc-200'}`}>
+                  {isCompleted ? <CheckCircle2Icon className="w-6 h-6" /> : s.icon}
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600">{s.name}</span>
+                <span className={`text-[10px] font-black uppercase tracking-widest ${isActive ? 'text-[#0078d4]' : 'text-zinc-500'}`}>{s.name}</span>
               </button>
               {idx < steps.length - 1 && (
-                <div className={`flex-1 h-0.5 mx-4 rounded-full ${step > s.id + 1 ? 'bg-[#0078d4]' : 'bg-zinc-200'}`} />
+                <div className={`flex-1 h-0.5 mx-4 rounded-full transition-colors duration-500 ${step > idx + 1 ? 'bg-[#0078d4]' : 'bg-zinc-200'}`} />
               )}
             </React.Fragment>
           );

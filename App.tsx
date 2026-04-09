@@ -557,7 +557,7 @@ const App: React.FC = () => {
           {/* Header Minimalista */}
           <header className="no-print h-20 bg-white border-b border-zinc-200 flex items-center justify-between px-8 z-50 shrink-0 shadow-sm">
             <div className="flex items-center">
-               <img src="/LOGOS/LogoPrincipal.png" alt="DNIGen" className="h-12 w-auto" />
+               <img src="/LOGOS/LogoPrincipal.png" alt="DNIGen" className="h-14 w-auto" />
             </div>
 
             <button

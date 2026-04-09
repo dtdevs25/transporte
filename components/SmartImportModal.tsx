@@ -231,7 +231,7 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
                     </div>
 
                     <textarea
-                        className="w-full h-80 p-6 bg-zinc-50 border-2 border-zinc-100 rounded-3xl outline-none focus:border-zinc-900 focus:bg-white transition-all font-mono text-sm resize-none"
+                        className="w-full h-48 p-6 bg-zinc-50 border-2 border-zinc-100 rounded-3xl outline-none focus:border-zinc-900 focus:bg-white transition-all font-mono text-sm resize-none"
                         placeholder="Cole aqui os dados copiados do sistema..."
                         value={text}
                         onChange={(e) => setText(e.target.value)}
@@ -239,7 +239,7 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
                     />
                 </div>
 
-                <div className="p-8 border-t border-zinc-50 bg-zinc-50/30 flex flex-wrap gap-4">
+                <div className="p-8 border-t border-zinc-50 bg-zinc-50/30 flex justify-end gap-4">
                     <button
                         onClick={onClose}
                         className="px-6 py-4 text-xs font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-600 transition-all"
@@ -248,19 +248,11 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
                     </button>
 
                     <button
-                        onClick={() => handleProcess('sender')}
-                        disabled={!text.trim()}
-                        className="flex-1 py-4 bg-zinc-100 text-zinc-900 border border-zinc-200 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-zinc-200 transition-all disabled:opacity-30"
-                    >
-                        Só Remetente
-                    </button>
-
-                    <button
                         onClick={() => handleProcess('all')}
                         disabled={!text.trim()}
-                        className="flex-1 py-4 bg-zinc-950 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-zinc-800 transition-all disabled:opacity-30 shadow-xl shadow-zinc-950/20"
+                        className="px-12 py-4 bg-zinc-950 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-zinc-800 transition-all disabled:opacity-30 shadow-xl shadow-zinc-950/20"
                     >
-                        Importar Tudo
+                        Importar
                     </button>
                 </div>
             </div>
