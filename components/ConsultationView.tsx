@@ -78,6 +78,9 @@ export const ConsultationView: React.FC<Props> = ({ history, onSelect, onDelete,
                     </td>
                     <td className="px-8 py-6">
                       <div className="text-sm font-black text-zinc-900 max-w-[250px] truncate">{d.sender.name}</div>
+                      {d.employeeEmail && (
+                        <div className="text-[10px] text-[#0078d4] font-bold truncate lowercase mt-0.5">{d.employeeEmail}</div>
+                      )}
                       <div className="text-[11px] text-zinc-500 font-bold uppercase tracking-tight mt-1 flex items-center gap-1.5">
                          <div className="w-1.5 h-1.5 rounded-full bg-zinc-300"></div>
                          {d.carrier.companyName}
