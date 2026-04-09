@@ -10,6 +10,7 @@ interface Props {
         carrier?: Partial<CarrierData>; 
         equipment?: Equipment[];
         requestNumber?: string;
+        employeeEmail?: string;
     }) => void;
 }
 
@@ -87,37 +88,19 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
         const addr1 = get('shipToAddress1') || scan(/shipToAddress1\s+(.+)/i);
         const addr2 = get('shipToAddress2') || scan(/shipToAddress2\s+(.+)/i);
         if (addr1 || addr2) {
-            // Address logic: Try to separate street from number
-            // Typical format: "Rua Nome da Rua, 123 B"
             let street = addr1;
-            let number = '';
+            let number = 'S/N';
 
-            const commaIndex = addr1.lastIndexOf(',');
-            if (commaIndex !== -1) {
-                street = addr1.substring(0, commaIndex).trim();
-                number = addr1.substring(commaIndex + 1).trim();
-            } else {
-            if (addr1.includes(',')) {
-                const parts = addr1.split(',');
-                number = parts.pop()?.trim() || '';
-                street = parts.join(',').trim();
-            } else {
-                // Find where the number starts (first occurrence of a digit)
-                const match = addr1.match(/(.*?)(\d+.*)$/);
-                if (match) {
-                    street = match[1].trim();
-                    number = match[2].trim();
-                }
-            }
+            const match = addr1.match(/(.*?)(\d+.*)$/);
+            if (match) {
+                street = match[1].trim();
+                number = match[2].trim();
+                if (street.endsWith(',')) street = street.slice(0, -1).trim();
             }
 
             sender.address = street;
             sender.number = number;
-            
-            // If there's address2, it might be the neighborhood or complement
-            if (addr2) {
-                sender.bairro = addr2;
-            }
+            sender.bairro = addr2 || 'Centro';
         }
 
         const city = get('shipToCity', 'Municipio:') || scan(/shipToCity\s+(.+)/i);
@@ -132,12 +115,12 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
             sender.zipCode = zipDigits.length === 8 ? zipDigits.replace(/(\d{5})(\d{3})/, '$1-$2') : zip;
         }
 
-        const lob = get('lob') || scan(/\blob\s+(\S+)/i) || get('Razão Social da Empresa');
-        if (lob) {
-            const l = lob.toLowerCase().trim();
+        const lobVal = get('lob') || scan(/\blob\s+(\S+)/i) || get('Razão Social da Empresa');
+        if (lobVal) {
+            const l = lobVal.toLowerCase().trim();
             if (l === 'gev' || l.includes('vernova')) sender.companyName = 'GE Vernova';
             else if (l === 'geh-br-le1' || l.includes('healthcare')) sender.companyName = 'GE HealthCare';
-            else sender.companyName = lob;
+            else sender.companyName = lobVal;
         }
 
         const contact = get('contact', 'Contato:') || scan(/contact\s+(.+)/i);
@@ -146,13 +129,9 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
         const reqNum = get('requestNumber') || scan(/requestNumber\s+(\S+)/i) || scan(/(RITM\d+)/i);
         if (reqNum) requestNumber = reqNum;
 
-        const extraMetadata: Partial<Record<keyof Declaration, string>> = {
-            shipToAddressTo: get('shipToAddressTo') || scan(/shipToAddressTo\s+(.+)/i),
-            employeeEmail: get('employeeEmail', 'E-mail:') || scan(/employeeEmail\s+(\S+@\S+)/i) || scan(/([\w.-]+@[\w.-]+\.\w+)/),
-            deliveryDate: get('deliveryDate') || scan(/deliveryDate\s+(\d{2}\/\d{2}\/\d{4})/i),
-            requestType: get('requestType') || scan(/requestType\s+(\S+)/i),
-            priority: get('priority') || scan(/priority\s+(\S+)/i),
-            legalHold: get('legalHold') || scan(/legalHold\s+(\S+)/i),
+        const email = get('employeeEmail', 'E-mail:') || scan(/employeeEmail\s+(\S+@\S+)/i) || scan(/([\w.-]+@[\w.-]+\.\w+)/);
+        const extraMetadata = {
+            employeeEmail: email || undefined
         };
 
         const empPhone = get('employeePhone', 'Telefone/Fax:') || scan(/employeePhone\s+(\S+)/i);
