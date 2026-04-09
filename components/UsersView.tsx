@@ -198,12 +198,17 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
                                                 </div>
                                                 <div className="flex flex-col">
                                                     <span className="font-black text-zinc-900">{user.username}</span>
-                                                    <span className="text-[10px] font-bold text-zinc-400 uppercase">{user.role}</span>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-8 py-6">
                                             <span className="text-sm font-semibold text-zinc-500">{user.email || '—'}</span>
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter ${user.role === 'master' ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-500'}`}>
+                                                <ShieldIcon className="w-3 h-3" />
+                                                {user.role === 'master' ? 'Master' : 'Comum'}
+                                            </div>
                                         </td>
                                         <td className="px-8 py-6 text-sm font-semibold text-zinc-500">
                                             {new Date(user.created_at).toLocaleDateString('pt-BR')}
@@ -212,7 +217,7 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
                                             {user.username !== 'admin' && (
                                                 <button
                                                     onClick={() => handleDeleteUser(user.id, user.username)}
-                                                    className="p-3 bg-white hover:bg-red-500 text-zinc-400 hover:text-white rounded-xl shadow-sm border border-zinc-100 transition-all opacity-0 group-hover:opacity-100"
+                                                    className="p-3 bg-white hover:bg-red-500 text-zinc-400 hover:text-white rounded-xl shadow-sm border border-zinc-100 transition-all"
                                                     title="Excluir Usuário"
                                                 >
                                                     <Trash2Icon className="w-5 h-5" />

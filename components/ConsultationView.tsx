@@ -47,7 +47,6 @@ export const ConsultationView: React.FC<Props> = ({ history, onSelect, onDelete,
                 <th className="px-8 py-5 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Solicitação / Nº</th>
                 <th className="px-8 py-5 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Data de Coleta</th>
                 <th className="px-8 py-5 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Envolvidos</th>
-                <th className="px-8 py-5 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Status</th>
                 <th className="px-8 py-5 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] text-right">Ações</th>
               </tr>
             </thead>
@@ -86,17 +85,11 @@ export const ConsultationView: React.FC<Props> = ({ history, onSelect, onDelete,
                          {d.carrier.companyName}
                       </div>
                     </td>
-                    <td className="px-8 py-6">
-                      <div className="flex gap-2">
-                        <SignatureBadge active={!!d.signatureSender} label="Remetente" />
-                        <SignatureBadge active={!!d.signatureCarrier} label="Motorista" />
-                      </div>
-                    </td>
                     <td className="px-8 py-6 text-right">
-                      <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                      <div className="flex justify-end gap-3 transition-all">
                         <button
                           onClick={() => onSelect(d)}
-                          className="p-3 bg-white hover:bg-zinc-900 text-[#0078d4] hover:text-white rounded-xl shadow-sm border border-zinc-200 transition-all font-bold text-xs"
+                          className="p-3 bg-white hover:bg-zinc-950 text-[#0078d4] hover:text-white rounded-xl shadow-sm border border-zinc-200 transition-all font-bold text-xs"
                           title="Visualizar"
                         >
                           <EyeIcon className="w-5 h-5" />
