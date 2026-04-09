@@ -252,56 +252,38 @@ app.post('/api/declarations', async (req, res) => {
                 const finalFilename = `SR - ${ritm} - DNI ${number} – ${company} - Reversa – ${dateStr}.pdf`;
 
                 const emailHtml = `
-                    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; color: #1a202c;">
-                        <div style="padding: 40px 0; text-align: center; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);">
-                            <img src="cid:logo" alt="DNIGen" style="height: 60px; width: auto; margin-bottom: 20px;">
-                            <h2 style="margin: 0; color: #0f172a; font-size: 24px; font-weight: 800; letter-spacing: -0.025em;">Declaração de Transporte</h2>
-                            <p style="margin: 8px 0 0; color: #64748b; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">DNI #${number}</p>
+                    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff; color: #1a202c;">
+                        <div style="padding: 25px 0; text-align: center; background: #f8fafc;">
+                            <img src="cid:logo" alt="DNIGen" style="height: 45px; width: auto; margin-bottom: 10px;">
+                            <h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 800; letter-spacing: -0.025em;">Nova Declaração #DNI ${number}</h2>
                         </div>
                         
-                        <div style="padding: 40px; border-bottom: 1px solid #f1f5f9;">
-                            <p style="margin-top: 0; font-size: 16px;">Olá <strong>${usernameForLog}</strong>,</p>
-                            <p style="color: #475569; font-size: 15px; line-height: 1.6;">Uma nova declaração de transporte foi gerada com sucesso. Abaixo estão os detalhes principais para sua conferência rápida:</p>
+                        <div style="padding: 30px;">
+                            <p style="margin-top: 0; font-size: 14px; color: #475569;">Olá <strong>${usernameForLog}</strong>, os detalhes da nova declaração estão abaixo:</p>
                             
-                            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin: 24px 0;">
-                                <table style="width: 100%; border-collapse: collapse;">
+                            <div style="background-color: #f8fafc; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                                     <tr>
-                                        <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600; width: 100px;">RITM:</td>
-                                        <td style="padding: 8px 0; color: #0f172a; font-size: 14px; font-weight: 700;">${ritm}</td>
+                                        <td style="padding: 4px 0; color: #64748b; font-weight: 600; width: 90px;">RITM:</td>
+                                        <td style="padding: 4px 0; color: #0f172a; font-weight: 700;">${ritm}</td>
                                     </tr>
                                     <tr>
-                                        <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600;">Data:</td>
-                                        <td style="padding: 8px 0; color: #0f172a; font-size: 14px; font-weight: 700;">${date}</td>
-                                    </tr>
-                                    <tr><td colspan="2" style="padding: 8px 0;"><div style="border-top: 1px solid #e2e8f0;"></div></td></tr>
-                                    <tr>
-                                        <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600;">Remetente:</td>
-                                        <td style="padding: 8px 0; color: #0f172a; font-size: 14px; font-weight: 700;">${sender.name}</td>
+                                        <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Remetente:</td>
+                                        <td style="padding: 4px 0; color: #0f172a; font-weight: 700;">${sender.name}</td>
                                     </tr>
                                     <tr>
-                                        <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600;">Empresa:</td>
-                                        <td style="padding: 8px 0; color: #0f172a; font-size: 14px; font-weight: 700;">${company}</td>
-                                    </tr>
-                                    <tr><td colspan="2" style="padding: 8px 0;"><div style="border-top: 1px solid #e2e8f0;"></div></td></tr>
-                                    <tr>
-                                        <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600;">Destinatário:</td>
-                                        <td style="padding: 8px 0; color: #0f172a; font-size: 14px; font-weight: 700;">${recipient.name}</td>
+                                        <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Empresa:</td>
+                                        <td style="padding: 4px 0; color: #0f172a; font-weight: 700;">${company}</td>
                                     </tr>
                                     <tr>
-                                        <td style="padding: 8px 0; color: #64748b; font-size: 13px; font-weight: 600;">Município:</td>
-                                        <td style="padding: 8px 0; color: #0f172a; font-size: 14px; font-weight: 700;">${city} / ${sender.state}</td>
+                                        <td style="padding: 4px 0; color: #64748b; font-weight: 600;">Destinatário:</td>
+                                        <td style="padding: 4px 0; color: #0f172a; font-weight: 700;">${recipient.name}</td>
                                     </tr>
                                 </table>
                             </div>
                             
-                            <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 0;">
-                                O documento PDF original foi anexado a este e-mail conforme as normas de transporte. Ele também está arquivado em sua base de dados no sistema.
-                            </p>
-                        </div>
-                        
-                        <div style="padding: 30px; background-color: #f8fafc; text-align: center;">
-                            <p style="margin: 0; font-size: 12px; color: #94a3b8; font-weight: 500;">
-                                Sistema DNIGen &copy; ${new Date().getFullYear()} – Gestão Inteligente de Logística Reversa
+                            <p style="color: #64748b; font-size: 12px; line-height: 1.5; margin-bottom: 0; text-align: center;">
+                                Documento PDF oficial anexado. Disponível também no sistema.
                             </p>
                         </div>
                     </div>
