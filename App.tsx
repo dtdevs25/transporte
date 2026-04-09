@@ -555,58 +555,58 @@ const App: React.FC = () => {
       ) : (
         <div className="h-screen flex flex-col bg-zinc-50 overflow-hidden font-['Segoe_UI']">
           {/* Header Minimalista */}
-          <header className="no-print h-16 bg-white border-b border-zinc-200 flex items-center justify-between px-8 z-50 shrink-0 shadow-sm">
+          <header className="no-print h-20 bg-white border-b border-zinc-200 flex items-center justify-between px-8 z-50 shrink-0 shadow-sm">
             <div className="flex items-center">
-               <img src="/LOGOS/LogoPrincipal.png" alt="DNIGen" className="h-9 w-auto" />
+               <img src="/LOGOS/LogoPrincipal.png" alt="DNIGen" className="h-12 w-auto" />
             </div>
 
             <button
               onClick={handleLogout}
-              className="flex items-center justify-center p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+              className="flex items-center justify-center p-2.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all group"
               title="Sair"
             >
               <LogOutIcon className="w-5 h-5" />
-              <span className="ml-2 text-[10px] font-black uppercase tracking-widest hidden sm:block">Sair</span>
+              <span className="ml-2 text-[10px] font-black uppercase tracking-widest hidden sm:block">Sair do Sistema</span>
             </button>
           </header>
 
           <div className="flex-1 flex overflow-hidden relative">
-            {/* Sidebar acinzentado e retrátil */}
+            {/* Sidebar acinzentado e retrátil (Mini-sidebar quando recolhido) */}
             <aside
-              className={`no-print bg-zinc-100 h-full transition-all duration-300 flex flex-col z-40 border-r border-zinc-200 shrink-0 overflow-hidden relative ${isMenuCollapsed ? 'w-0' : 'w-72'}`}
+              className={`no-print bg-zinc-100 h-full transition-all duration-300 flex flex-col z-40 border-r border-zinc-200 shrink-0 overflow-hidden relative ${isMenuCollapsed ? 'w-20' : 'w-72'}`}
             >
-              <nav className="flex-1 p-6 space-y-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
+              <nav className="flex-1 p-4 space-y-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
                 <SidebarItem
                   icon={<PlusIcon className="w-5 h-5" />}
                   label="Nova Declaração"
                   active={view === 'edit'}
-                  collapsed={false}
+                  collapsed={isMenuCollapsed}
                   onClick={() => { setView('edit'); setActiveDeclaration(null); }}
                 />
                 <SidebarItem
                   icon={<SearchIcon className="w-5 h-5" />}
                   label="Base de Dados"
                   active={view === 'consultation'}
-                  collapsed={false}
+                  collapsed={isMenuCollapsed}
                   onClick={() => setView('consultation')}
                 />
                 {userRole === 'master' && (
                   <>
-                    <div className="pt-6 pb-2 px-4">
+                    <div className={`pt-6 pb-2 px-4 transition-opacity duration-300 ${isMenuCollapsed ? 'opacity-0' : 'opacity-100'}`}>
                       <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Administração</span>
                     </div>
                     <SidebarItem
                       icon={<UserIcon className="w-5 h-5" />}
                       label="Controle de Usuários"
                       active={view === 'users'}
-                      collapsed={false}
+                      collapsed={isMenuCollapsed}
                       onClick={() => setView('users')}
                     />
                     <SidebarItem
                       icon={<ShieldIcon className="w-5 h-5" />}
                       label="Logs de Auditoria"
                       active={view === 'logs'}
-                      collapsed={false}
+                      collapsed={isMenuCollapsed}
                       onClick={() => setView('logs')}
                     />
                   </>
@@ -635,45 +635,37 @@ const App: React.FC = () => {
               </nav>
 
               {/* Informações do Usuário no rodapé do Sidebar */}
-              <div className="p-6 border-t border-zinc-200 bg-zinc-200/20">
+              <div className="p-4 border-t border-zinc-200 bg-zinc-200/20">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-zinc-300 flex items-center justify-center text-zinc-600 shadow-inner overflow-hidden border border-zinc-100">
+                  <div className="shrink-0 w-10 h-10 rounded-full bg-zinc-300 flex items-center justify-center text-zinc-600 shadow-inner overflow-hidden border border-zinc-100">
                     <UserIcon className="w-5 h-5" />
                   </div>
-                  <div className="flex flex-col text-left overflow-hidden">
-                    <span className="text-[11px] font-black text-zinc-900 tracking-widest uppercase truncate">{currentUsername}</span>
-                    <span className="text-[9px] font-bold text-[#0078d4] uppercase tracking-widest">{userRole === 'master' ? 'Master / Admin' : 'Colaborador'}</span>
-                  </div>
+                  {!isMenuCollapsed && (
+                    <div className="flex flex-col text-left overflow-hidden animate-in fade-in duration-500">
+                      <span className="text-[11px] font-black text-zinc-900 tracking-widest uppercase truncate">{currentUsername}</span>
+                      <span className="text-[9px] font-bold text-[#0078d4] uppercase tracking-widest">{userRole === 'master' ? 'Master / Admin' : 'Colaborador'}</span>
+                    </div>
+                  )}
                 </div>
-                <p className="text-[8px] font-black text-zinc-400 uppercase tracking-[0.2em] text-center mt-6">
-                  DNIGen v2.5 Enterprise
-                </p>
               </div>
             </aside>
 
-            {/* Setinha de toggle entre sidebar e main */}
+            {/* Marcador de Seta (Bolinha flutuante) */}
             <button
               onClick={() => setIsMenuCollapsed(!isMenuCollapsed)}
-              className={`no-print absolute top-10 flex items-center justify-center w-6 h-12 bg-white border border-zinc-200 rounded-r-lg shadow-md z-50 transition-all duration-300 hover:bg-zinc-50 ${isMenuCollapsed ? 'left-0' : 'left-72'}`}
+              className={`no-print absolute top-10 flex items-center justify-center w-8 h-8 bg-white border border-zinc-200 rounded-full shadow-lg z-50 transition-all duration-300 hover:scale-110 hover:bg-zinc-50 -ml-4 ${isMenuCollapsed ? 'left-20' : 'left-72'}`}
             >
               {isMenuCollapsed ? (
-                <ChevronRightIcon className="w-4 h-4 text-zinc-400" />
+                <ChevronRightIcon className="w-4 h-4 text-zinc-600" />
               ) : (
-                <ChevronLeftIcon className="w-4 h-4 text-zinc-400" />
+                <ChevronLeftIcon className="w-4 h-4 text-zinc-600" />
               )}
             </button>
 
             {/* Conteúdo Principal */}
             <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#f8f9fa] p-8 pb-24 transition-all duration-300">
               <div className="max-w-[1400px] mx-auto">
-                <div className="mb-8 flex items-center justify-between no-print">
-                   <div className="text-[11px] text-zinc-500 font-bold uppercase tracking-[0.3em]">
-                      {view === 'edit' ? 'Painel de Emissão de Documentos' : 
-                       view === 'consultation' ? 'Diretório Digital de Declarações' : 
-                       view === 'users' ? 'Segurança e Controle de Acessos' : 
-                       view === 'logs' ? 'Registro Histórico de Auditoria' : 'Visualização do Documento'}
-                   </div>
-                </div>
+                {/* Títulos de seção removidos conforme pedido */}
 
                 {view === 'edit' ? (
                   <div className="bg-white rounded-[2.5rem] shadow-xl shadow-zinc-200/40 border border-zinc-200 overflow-hidden">
@@ -774,10 +766,10 @@ const App: React.FC = () => {
 const SidebarItem: React.FC<{ icon: React.ReactNode; label: string; active: boolean; collapsed: boolean; onClick: () => void }> = ({ icon, label, active, collapsed, onClick }) => (
   <button
     onClick={onClick}
-    className={`relative group w-full flex items-center transition-all ${collapsed ? 'justify-center p-3.5' : 'p-3 gap-3'} rounded-xl font-bold uppercase tracking-widest text-[10px] ${active ? 'bg-zinc-100 text-zinc-950 shadow-md' : 'text-zinc-500 hover:bg-zinc-900/5 hover:text-zinc-100'}`}
+    className={`relative group w-full flex items-center transition-all ${collapsed ? 'justify-center p-3.5' : 'p-3 gap-3'} rounded-xl font-bold uppercase tracking-widest text-[10px] ${active ? 'bg-zinc-200 text-zinc-950 shadow-sm' : 'text-zinc-500 hover:bg-zinc-200/50 hover:text-zinc-900'}`}
   >
     <div className={`shrink-0 transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>{icon}</div>
-    {!collapsed && <span className="whitespace-nowrap overflow-hidden text-left font-black">{label}</span>}
+    {!collapsed && <span className="whitespace-nowrap overflow-hidden text-left font-black transition-colors">{label}</span>}
   </button>
 );
 
