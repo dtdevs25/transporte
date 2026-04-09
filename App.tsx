@@ -274,6 +274,8 @@ const App: React.FC = () => {
         sessionStorage.setItem('user_role', data.role);
         sessionStorage.setItem('username', data.username);
         fetchDeclarations();
+        setView('edit');
+        setActiveDeclaration(null);
       } else {
         const errorData = await response.json();
         setLoginError(errorData.error || 'Credenciais inválidas. Tente novamente.');
