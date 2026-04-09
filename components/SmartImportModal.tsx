@@ -142,24 +142,31 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
 
         const empPhone = get('employeePhone', 'Telefone/Fax:') || scan(/employeePhone\s+(\S+)/i);
         if (empPhone) {
-            // Handle scientific notation like 5.51197E+12
-            let processedPhone = empPhone;
-            if (empPhone.includes('E+') || empPhone.includes('e+')) {
-                try {
-                    processedPhone = Number(empPhone.replace(',', '.')).toString();
-                } catch(e) {}
+            let processedPhone = empPhone.trim();
+            
+            // Handle scientific notation like 5,51197E+12 (Excel copy/paste)
+            if (processedPhone.toUpperCase().includes('E+')) {
+                const normalized = processedPhone.replace(',', '.');
+                const num = Number(normalized);
+                if (!isNaN(num)) {
+                    // Convert to full string without scientific notation and without decimals
+                    processedPhone = num.toLocaleString('fullwide', {useGrouping:false, maximumFractionDigits:0});
+                }
             }
 
             const digits = processedPhone.replace(/\D/g, '');
-            // Remove country code if it's 55
-            const finalDigits = digits.startsWith('55') ? digits.substring(2) : digits;
+            // Remove country code if it's 55 and it's a long number
+            const finalDigits = (digits.startsWith('55') && digits.length >= 12) ? digits.substring(2) : digits;
             
             if (finalDigits.length >= 10) {
-                sender.phone = finalDigits.length === 11
-                    ? `(${finalDigits.slice(0, 2)}) ${finalDigits.slice(2, 7)}-${finalDigits.slice(7)}`
-                    : `(${finalDigits.slice(0, 2)}) ${finalDigits.slice(2, 6)}-${finalDigits.slice(6)}`;
+                // Formats for 11 digits (9xxxx-xxxx) or 10 digits (xxxx-xxxx)
+                if (finalDigits.length === 11) {
+                   sender.phone = `(${finalDigits.slice(0, 2)}) ${finalDigits.slice(2, 7)}-${finalDigits.slice(7)}`;
+                } else {
+                   sender.phone = `(${finalDigits.slice(0, 2)}) ${finalDigits.slice(2, 6)}-${finalDigits.slice(6)}`;
+                }
             } else {
-                sender.phone = finalDigits || empPhone;
+                sender.phone = processedPhone;
             }
         }
 
