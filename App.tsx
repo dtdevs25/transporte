@@ -589,7 +589,7 @@ const App: React.FC = () => {
                 />
                 <SidebarItem
                   icon={<SearchIcon className="w-5 h-5" />}
-                  label="Base de Dados"
+                  label="Gerados"
                   active={view === 'consultation'}
                   collapsed={isMenuCollapsed}
                   onClick={() => setView('consultation')}
@@ -614,27 +614,6 @@ const App: React.FC = () => {
                       onClick={() => setView('logs')}
                     />
                   </>
-                )}
-
-                {!isMenuCollapsed && history.length > 0 && (
-                   <div className="mt-8 pt-6 border-t border-zinc-200">
-                      <div className="px-4 mb-3 text-zinc-400 uppercase text-[9px] font-black tracking-widest">Recentes</div>
-                      <div className="space-y-1">
-                        {history.slice(0, 3).map(item => (
-                          <button
-                            key={item.id}
-                            onClick={() => { setActiveDeclaration(item); setView('preview'); }}
-                            className="w-full p-2.5 rounded-xl text-left hover:bg-zinc-200/50 transition-all group flex items-center gap-3"
-                          >
-                            <HistoryIcon className="w-4 h-4 text-zinc-400" />
-                            <div className="min-w-0">
-                              <div className="text-[10px] font-black text-zinc-900 truncate tracking-tight">#{item.number}</div>
-                              <div className="text-[9px] text-zinc-500 truncate uppercase font-bold tracking-tighter">{item.sender.name}</div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                   </div>
                 )}
               </nav>
 
