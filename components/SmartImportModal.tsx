@@ -49,95 +49,144 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
     };
 
     const handleProcess = (importType: 'all' | 'sender' | 'items') => {
-        const lines = text.split('\n');
         const sender: Partial<SenderData> = {};
         const carrier: Partial<CarrierData> = {};
         let requestNumber = '';
         const items: Equipment[] = [];
 
-        // Helper to find value by multiple possible keys
-        const findValue = (keys: string[]) => {
-            for (const line of lines) {
-                // Try format "Key Value" or "Key: Value" or "Key [tab] Value"
-                const lowerLine = line.toLowerCase();
-                for (const key of keys) {
-                    const lowerKey = key.toLowerCase();
-                    if (lowerLine.includes(lowerKey)) {
-                        // Split by colon, tab, or double space
-                        const parts = line.split(/[:\t]|\s{2,}/);
-                        if (parts.length >= 2) {
-                            // Find which part contains the key and return the next non-empty part
-                            const keyIdx = parts.findIndex(p => p.toLowerCase().includes(lowerKey));
-                            if (keyIdx !== -1 && parts[keyIdx + 1]) {
-                                return parts[keyIdx + 1].trim();
-                            }
-                        }
-                        // Fallback: replace key and trim
-                        const regex = new RegExp(key, 'i');
-                        let val = line.replace(regex, '').replace(/^[:\t\s]+/, '').trim();
-                        if (val) return val;
-                    }
-                }
+        // Build a key->value map from the raw text
+        // Handles: "key\tvalue", "key   value", "key: value", "key value" (all on same line)
+        const kvMap: Record<string, string> = {};
+        const lines = text.split('\n');
+
+        for (const rawLine of lines) {
+            const line = rawLine.trim();
+            if (!line) continue;
+
+            // Try tab-separated first (most common when copying from a table)
+            const tabParts = line.split('\t');
+            if (tabParts.length >= 2) {
+                const key = tabParts[0].trim();
+                const val = tabParts.slice(1).join('\t').trim();
+                if (key && val) kvMap[key.toLowerCase()] = val;
+                continue;
+            }
+
+            // Try colon-separated: "key: value" or "key : value"
+            const colonIdx = line.indexOf(':');
+            if (colonIdx > 0 && colonIdx < 40) {
+                const key = line.slice(0, colonIdx).trim();
+                const val = line.slice(colonIdx + 1).trim();
+                if (key && val) kvMap[key.toLowerCase()] = val;
+                continue;
+            }
+
+            // Try multiple consecutive spaces: "key   value"
+            const spaceParts = line.split(/\s{2,}/);
+            if (spaceParts.length >= 2) {
+                const key = spaceParts[0].trim();
+                const val = spaceParts.slice(1).join(' ').trim();
+                if (key && val) kvMap[key.toLowerCase()] = val;
+            }
+        }
+
+        // Helper to get value by trying several key names
+        const get = (...keys: string[]): string => {
+            for (const key of keys) {
+                const val = kvMap[key.toLowerCase()];
+                if (val) return val.trim();
             }
             return '';
         };
 
-        // 1. Specific Paygen Mappings
-        const careOf = findValue(['shipToCareOf', 'Nome:']);
-        if (careOf) {
-            sender.name = careOf;
-            sender.contact = careOf;
+        // Also try a regex scan across the whole text as fallback
+        const scan = (pattern: RegExp): string => {
+            const m = text.match(pattern);
+            return m ? m[1].trim() : '';
+        };
+
+        // ---- DESTINATION INFO (PAYGEN) mappings ----
+        const careOf = get('shipToCareOf') || scan(/shipToCareOf\s+(.+)/i);
+        if (careOf) { sender.name = careOf; sender.contact = careOf; }
+
+        const taxNum = get('taxNumber') || scan(/taxNumber\s+([\d.-]+)/i);
+        if (taxNum) {
+            const digits = taxNum.replace(/\D/g, '');
+            if (digits.length === 11) {
+                sender.cpf = digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            } else {
+                sender.cpf = taxNum;
+            }
         }
 
-        const taxNumber = findValue(['taxNumber', 'CPF:']);
-        if (taxNumber) sender.cpf = taxNumber.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-
-        const addr1 = findValue(['shipToAddress1']);
-        const addr2 = findValue(['shipToAddress2']);
+        const addr1 = get('shipToAddress1') || scan(/shipToAddress1\s+(.+)/i);
+        const addr2 = get('shipToAddress2') || scan(/shipToAddress2\s+(.+)/i);
         if (addr1 || addr2) {
-            sender.address = [addr1, addr2].filter(Boolean).join(' - ');
+            // Extract number from address if present (e.g. "Rua Antônio Leal da Silva, 535 B")
+            const fullAddr = [addr1, addr2].filter(Boolean).join(' - ');
+            const numMatch = addr1.match(/,\s*(\S+)\s*$/);
+            sender.address = fullAddr;
+            if (numMatch) sender.number = numMatch[1];
         }
 
-        const city = findValue(['shipToCity', 'Municipio:']);
+        const city = get('shipToCity') || scan(/shipToCity\s+(.+)/i);
         if (city) sender.city = city;
 
-        const state = findValue(['shipToState', 'Estado:']);
+        const state = get('shipToState') || scan(/shipToState\s+([A-Z]{2})/i);
         if (state) sender.state = state.toUpperCase().slice(0, 2);
 
-        const zip = findValue(['shipToPostalCode', 'CEP:']);
-        if (zip) sender.zipCode = zip.replace(/\D/g, '').replace(/(\d{5})(\d{3})/, '$1-$2');
+        const zip = get('shipToPostalCode') || scan(/shipToPostalCode\s+([\d-]+)/i);
+        if (zip) {
+            const zipDigits = zip.replace(/\D/g, '');
+            sender.zipCode = zipDigits.length === 8 ? zipDigits.replace(/(\d{5})(\d{3})/, '$1-$2') : zip;
+        }
 
-        const lob = findValue(['lob']);
+        // ---- SR INFO (PAYGEN) mappings ----
+        const lob = get('lob') || scan(/\blob\s+(\S+)/i);
         if (lob) {
-            const lowerLob = lob.toLowerCase();
-            if (lowerLob === 'gev') sender.companyName = 'GE Vernova';
-            else if (lowerLob === 'geh-br-le1') sender.companyName = 'GE HealthCare';
+            const l = lob.toLowerCase().trim();
+            if (l === 'gev') sender.companyName = 'GE Vernova';
+            else if (l === 'geh-br-le1') sender.companyName = 'GE HealthCare';
             else sender.companyName = lob;
         }
 
-        const reqNum = findValue(['requestNumber', 'RITM']);
+        const reqNum = get('requestNumber') || scan(/requestNumber\s+(\S+)/i) || scan(/(RITM\d+)/i);
         if (reqNum) requestNumber = reqNum;
 
-        const phone = findValue(['employeePhone', 'Telefone/Fax:']);
-        if (phone) sender.phone = phone;
+        const empPhone = get('employeePhone') || scan(/employeePhone\s+([\d+\s]+)/i);
+        if (empPhone) {
+            const digits = empPhone.replace(/\D/g, '');
+            if (digits.length >= 10) {
+                sender.phone = digits.length === 13
+                    ? `(${digits.slice(2, 4)}) ${digits.slice(4, 9)}-${digits.slice(9)}`
+                    : digits.length === 11
+                        ? `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+                        : empPhone;
+            } else {
+                sender.phone = empPhone;
+            }
+        }
 
-        const serial = findValue(['returnSerialNumber', 'Nº de Série']);
-        if (serial) {
+        const empEmail = get('employeeEmail') || scan(/employeeEmail\s+(\S+@\S+)/i);
+        // email is not a field in SenderData but could be used as contact reference
+
+        const serialNum = get('returnSerialNumber') || scan(/returnSerialNumber\s+(\S+)/i);
+        if (serialNum) {
             items.push({
                 description: 'EQUIPAMENTO EM RECLAME',
                 model: 'CONFIRME O MODELO',
-                serialNumber: serial,
+                serialNumber: serialNum,
                 unitValue: 0
             });
         }
 
-        // 2. Generic Mappings (Fallback)
+        // ---- Generic CPF fallback ----
         if (!sender.cpf) {
-            const cpfMatch = text.match(/(?:cpf)[:\s]+([\d.-]+)/i);
-            if (cpfMatch) sender.cpf = cpfMatch[1].trim();
+            const cpfMatch = text.match(/(\d{3}[\.\s]?\d{3}[\.\s]?\d{3}[\-\.\s]?\d{2})/);
+            if (cpfMatch) sender.cpf = cpfMatch[1].replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
         }
 
-        // Return the data
+        // ---- Call onImport ----
         onImport({
             sender: (importType === 'all' || importType === 'sender') && Object.keys(sender).length > 0 ? sender : undefined,
             carrier: importType === 'all' && Object.keys(carrier).length > 0 ? carrier : undefined,

@@ -122,9 +122,14 @@ const App: React.FC = () => {
       requestNumber: ''
     };
 
+    // Deep merge: for sender/carrier/recipient, merge fields instead of replacing the object
     setActiveDeclaration({
       ...current,
-      ...updatedData
+      ...(updatedData.requestNumber !== undefined ? { requestNumber: updatedData.requestNumber } : {}),
+      ...(updatedData.sender ? { sender: { ...current.sender, ...updatedData.sender } } : {}),
+      ...(updatedData.recipient ? { recipient: { ...current.recipient, ...updatedData.recipient } } : {}),
+      ...(updatedData.carrier ? { carrier: { ...current.carrier, ...updatedData.carrier } } : {}),
+      ...(updatedData.equipment ? { equipment: updatedData.equipment } : {}),
     });
   };
 
