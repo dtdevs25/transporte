@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlusIcon, Trash2Icon, UserIcon, ShieldIcon, LoaderIcon } from 'lucide-react';
+import { UserPlusIcon, Trash2Icon, UserIcon, ShieldIcon, LoaderIcon, PencilIcon } from 'lucide-react';
 
 interface User {
     id: number;
@@ -20,6 +20,7 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
     const [error, setError] = useState('');
     const [showForm, setShowForm] = useState(false);
     const [newUser, setNewUser] = useState({ username: '', password: '', role: 'user' as 'master' | 'user', email: '' });
+    const [editingUserId, setEditingUserId] = useState<number | null>(null);
 
     const fetchUsers = async () => {
         setIsLoading(true);
@@ -46,18 +47,22 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
         setIsSaving(true);
         setError('');
         try {
-            const response = await fetch(`${apiUrl}/users`, {
-                method: 'POST',
+            const method = editingUserId ? 'PUT' : 'POST';
+            const url = editingUserId ? `${apiUrl}/users/${editingUserId}` : `${apiUrl}/users`;
+            
+            const response = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newUser)
             });
             if (response.ok) {
                 setShowForm(false);
-                setNewUser({ username: '', password: '', role: 'user' });
+                setEditingUserId(null);
+                setNewUser({ username: '', password: '', role: 'user', email: '' });
                 fetchUsers();
             } else {
                 const data = await response.json();
-                setError(data.error || 'Erro ao criar usuário');
+                setError(data.error || 'Erro ao processar usuário');
             }
         } catch (err) {
             console.error(err);
@@ -90,10 +95,16 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div>
                     <h2 className="text-3xl font-black text-zinc-900 tracking-tight">Gestão de Usuários</h2>
-                    <p className="text-zinc-500 font-medium mt-1">Cadastre e gerencie os acessos ao sistema.</p>
+                    <p className="text-zinc-500 font-medium mt-1">
+                        {editingUserId ? `Editando o usuário: ${newUser.username}` : 'Cadastre e gerencie os acessos ao sistema.'}
+                    </p>
                 </div>
                 <button
-                    onClick={() => setShowForm(!showForm)}
+                    onClick={() => {
+                        setEditingUserId(null);
+                        setNewUser({ username: '', password: '', role: 'user', email: '' });
+                        setShowForm(!showForm);
+                    }}
                     className="flex items-center gap-2 px-6 py-3.5 bg-zinc-950 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-xl shadow-zinc-200"
                 >
                     <UserPlusIcon className="w-4 h-4" />
@@ -116,9 +127,11 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Senha</label>
+                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
+                                {editingUserId ? 'Nova Senha (opcional)' : 'Senha'}
+                            </label>
                             <input
-                                required
+                                required={!editingUserId}
                                 type="password"
                                 value={newUser.password}
                                 onChange={e => setNewUser({ ...newUser, password: e.target.value })}
@@ -162,7 +175,7 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
                                 className="px-8 py-3 bg-zinc-900 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-zinc-800 transition-all disabled:opacity-50 flex items-center gap-2"
                             >
                                 {isSaving && <LoaderIcon className="w-3 h-3 animate-spin" />}
-                                Salvar Usuário
+                                Salvar {editingUserId ? 'Alterações' : 'Usuário'}
                             </button>
                         </div>
                     </form>
@@ -214,15 +227,28 @@ export const UsersView: React.FC<Props> = ({ apiUrl }) => {
                                             {new Date(user.created_at).toLocaleDateString('pt-BR')}
                                         </td>
                                         <td className="px-8 py-6 text-right">
-                                            {user.username !== 'admin' && (
+                                            <div className="flex justify-end gap-2">
                                                 <button
-                                                    onClick={() => handleDeleteUser(user.id, user.username)}
-                                                    className="p-3 bg-white hover:bg-red-500 text-zinc-400 hover:text-white rounded-xl shadow-sm border border-zinc-100 transition-all"
-                                                    title="Excluir Usuário"
+                                                    onClick={() => {
+                                                        setEditingUserId(user.id);
+                                                        setNewUser({ username: user.username, password: '', role: user.role, email: user.email });
+                                                        setShowForm(true);
+                                                    }}
+                                                    className="p-3 bg-white hover:bg-zinc-950 text-[#0078d4] hover:text-white rounded-xl shadow-sm border border-zinc-100 transition-all"
+                                                    title="Editar Usuário"
                                                 >
-                                                    <Trash2Icon className="w-5 h-5" />
+                                                    <PencilIcon className="w-5 h-5" />
                                                 </button>
-                                            )}
+                                                {user.username !== 'admin' && (
+                                                    <button
+                                                        onClick={() => handleDeleteUser(user.id, user.username)}
+                                                        className="p-3 bg-white hover:bg-red-500 text-zinc-400 hover:text-white rounded-xl shadow-sm border border-zinc-100 transition-all"
+                                                        title="Excluir Usuário"
+                                                    >
+                                                        <Trash2Icon className="w-5 h-5" />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

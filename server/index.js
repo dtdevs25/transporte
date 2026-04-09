@@ -373,6 +373,30 @@ app.delete('/api/users/:id', async (req, res) => {
     }
 });
 
+app.put('/api/users/:id', async (req, res) => {
+    const { username, password, role, email } = req.body;
+    const adminUsername = req.headers['x-username'] || 'admin';
+    try {
+        if (password && password.trim() !== '') {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            await pool.query(
+                'UPDATE users SET username = $1, password = $2, role = $3, email = $4 WHERE id = $5',
+                [username, hashedPassword, role, email, req.params.id]
+            );
+        } else {
+            await pool.query(
+                'UPDATE users SET username = $1, role = $2, email = $3 WHERE id = $4',
+                [username, role, email, req.params.id]
+            );
+        }
+        await createLog(adminUsername, 'UPDATE', 'USER', username, `Editou o usuário ${username}`);
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Erro ao editar usuário' });
+    }
+});
+
 // Serve frontend in production
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, '../dist')));
