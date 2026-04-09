@@ -83,7 +83,7 @@ export const UsersView: React.FC<Props> = ({ apiUrl, showNotification }) => {
         showNotification(
             'Confirmar Exclusão',
             `Deseja realmente excluir o usuário ${username}? Esta ação não pode ser desfeita.`,
-            'warning',
+            'confirm',
             async () => {
                 try {
                     const response = await fetch(`${apiUrl}/users/${id}`, { method: 'DELETE' });

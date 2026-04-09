@@ -54,7 +54,7 @@ export const NotificationModal: React.FC<Props> = ({ isOpen, title, message, typ
                                 onClick={onClose}
                                 className="flex-1 py-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
                             >
-                                Cancelar
+                                Não, Cancelar
                             </button>
                             <button
                                 onClick={() => {
@@ -63,7 +63,7 @@ export const NotificationModal: React.FC<Props> = ({ isOpen, title, message, typ
                                 }}
                                 className="flex-1 py-4 bg-zinc-950 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-xl shadow-zinc-950/20"
                             >
-                                Confirmar
+                                Sim, Confirmar
                             </button>
                         </>
                     ) : (
