@@ -6,6 +6,7 @@ import path from 'path';
 import bcrypt from 'bcrypt';
 import nodemailer from 'nodemailer';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 dotenv.config();
 
@@ -306,19 +307,31 @@ app.post('/api/declarations', async (req, res) => {
                     </div>
                 `;
 
+                // Resolve logo path (handle both local development and CapRover/production)
+                let logoPath = path.join(__dirname, '../public/LOGOS/LogoPrincipal.png');
+                if (process.env.NODE_ENV === 'production') {
+                    logoPath = path.join(__dirname, '../dist/LOGOS/LogoPrincipal.png');
+                }
+
+                // Final attempt: if it fails, we still want to send the email without the logo
+                const attachments = [];
+                if (fs.existsSync(logoPath)) {
+                    attachments.push({
+                        filename: 'logo.png',
+                        path: logoPath,
+                        cid: 'logo'
+                    });
+                } else {
+                    console.warn('Logo not found at:', logoPath);
+                }
+
                 const mailOptions = {
                     from: `"DNIGen" <${process.env.SMTP_USER}>`,
                     to: userEmail,
                     cc: masterEmails.join(', '),
                     subject: `Declaração de Transporte #${number} - ${recipient.name}`,
                     html: emailHtml,
-                    attachments: [
-                        {
-                            filename: 'logo.png',
-                            path: path.join(__dirname, '../public/LOGOS/LogoPrincipal.png'),
-                            cid: 'logo'
-                        }
-                    ]
+                    attachments: attachments
                 };
 
                 if (pdfBase64) {
