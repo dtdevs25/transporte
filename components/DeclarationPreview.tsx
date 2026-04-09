@@ -121,8 +121,7 @@ export const DeclarationPreview: React.FC<Props> = ({ declaration, onSignatureCl
               <img src={declaration.signatureSender} alt="Assinatura Remetente" className="max-h-full max-w-full mx-auto" />
             )}
           </div>
-          <div className="font-bold text-[10pt] uppercase">{declaration.sender.name}</div>
-          <div className="text-[9pt] uppercase font-bold text-zinc-400">Assinatura do Remetente</div>
+          <div className="text-[9pt] uppercase font-bold text-black">Assinatura do Remetente</div>
         </div>
 
         <div className="text-center">
@@ -131,8 +130,7 @@ export const DeclarationPreview: React.FC<Props> = ({ declaration, onSignatureCl
               <img src={declaration.signatureCarrier} alt="Assinatura Motorista" className="max-h-full max-w-full mx-auto" />
             )}
           </div>
-          <div className="font-bold text-[10pt] uppercase">{declaration.carrier.driverName}</div>
-          <div className="text-[9pt] uppercase font-bold text-zinc-400">Assinatura do Motorista</div>
+          <div className="text-[9pt] uppercase font-bold text-black">Assinatura do Motorista</div>
         </div>
       </div>
     </div>
