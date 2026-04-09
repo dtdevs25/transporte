@@ -9,6 +9,7 @@ import crypto from 'crypto';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import { fileURLToPath } from 'url';
+import nodemailer from 'nodemailer';
 
 dotenv.config();
 
