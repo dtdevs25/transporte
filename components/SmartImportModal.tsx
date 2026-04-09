@@ -132,20 +132,23 @@ export const SmartImportModal: React.FC<Props> = ({ isOpen, onClose, onImport })
             sender.zipCode = zipDigits.length === 8 ? zipDigits.replace(/(\d{5})(\d{3})/, '$1-$2') : zip;
         }
 
-        const lob = get('lob') || scan(/\blob\s+(\S+)/i);
+        const lob = get('lob') || scan(/\blob\s+(\S+)/i) || get('Razão Social da Empresa');
         if (lob) {
             const l = lob.toLowerCase().trim();
-            if (l === 'gev') sender.companyName = 'GE Vernova';
-            else if (l === 'geh-br-le1') sender.companyName = 'GE HealthCare';
+            if (l === 'gev' || l.includes('vernova')) sender.companyName = 'GE Vernova';
+            else if (l === 'geh-br-le1' || l.includes('healthcare')) sender.companyName = 'GE HealthCare';
             else sender.companyName = lob;
         }
+
+        const contact = get('contact', 'Contato:') || scan(/contact\s+(.+)/i);
+        if (contact) sender.contact = contact;
 
         const reqNum = get('requestNumber') || scan(/requestNumber\s+(\S+)/i) || scan(/(RITM\d+)/i);
         if (reqNum) requestNumber = reqNum;
 
         const extraMetadata: Partial<Record<keyof Declaration, string>> = {
             shipToAddressTo: get('shipToAddressTo') || scan(/shipToAddressTo\s+(.+)/i),
-            employeeEmail: get('employeeEmail') || scan(/employeeEmail\s+(\S+@\S+)/i),
+            employeeEmail: get('employeeEmail', 'E-mail:') || scan(/employeeEmail\s+(\S+@\S+)/i) || scan(/([\w.-]+@[\w.-]+\.\w+)/),
             deliveryDate: get('deliveryDate') || scan(/deliveryDate\s+(\d{2}\/\d{2}\/\d{4})/i),
             requestType: get('requestType') || scan(/requestType\s+(\S+)/i),
             priority: get('priority') || scan(/priority\s+(\S+)/i),

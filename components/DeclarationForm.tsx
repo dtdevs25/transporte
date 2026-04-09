@@ -408,6 +408,8 @@ export const DeclarationForm: React.FC<Props> = ({
                 onChange={(v) => onUpdate({ sender: { ...sender, phone: formatPhone(v) } })}
                 placeholder="(00) 00000-0000"
               />
+              <FormField label="Contato" value={sender.contact || ''} onChange={(v) => onUpdate({ sender: { ...sender, contact: v } })} />
+              <FormField label="Empresa (Remetente)" value={sender.companyName || ''} onChange={(v) => onUpdate({ sender: { ...sender, companyName: v } })} />
             </div>
           </section>
         )}
