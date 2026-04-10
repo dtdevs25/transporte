@@ -92,6 +92,8 @@ const App: React.FC = () => {
   const [isMenuCollapsed, setIsMenuCollapsed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [isSmartModalOpen, setIsSmartModalOpen] = useState(false);
   const [resetToken, setResetToken] = useState<string | null>(null);
   const [forgotEmail, setForgotEmail] = useState('');
@@ -629,13 +631,20 @@ const App: React.FC = () => {
                     <div className="relative">
                       <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                       <input
-                        type="password"
+                        type={showNewPass ? "text" : "password"}
                         required
                         value={newPassword.pass}
                         onChange={(e) => setNewPassword({ ...newPassword, pass: e.target.value })}
-                        className="w-full pl-11 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 text-sm outline-none focus:ring-1 focus:ring-zinc-400 transition-all font-medium"
+                        className="w-full pl-11 pr-12 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 text-sm outline-none focus:ring-1 focus:ring-zinc-400 transition-all font-medium"
                         placeholder="••••••••"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPass(!showNewPass)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                      >
+                        {showNewPass ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
+                      </button>
                     </div>
                   </div>
                   <div className="space-y-1">
@@ -643,13 +652,20 @@ const App: React.FC = () => {
                     <div className="relative">
                       <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                       <input
-                        type="password"
+                        type={showConfirmPass ? "text" : "password"}
                         required
                         value={newPassword.confirm}
                         onChange={(e) => setNewPassword({ ...newPassword, confirm: e.target.value })}
-                        className="w-full pl-11 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 text-sm outline-none focus:ring-1 focus:ring-zinc-400 transition-all font-medium"
+                        className="w-full pl-11 pr-12 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 text-sm outline-none focus:ring-1 focus:ring-zinc-400 transition-all font-medium"
                         placeholder="••••••••"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPass(!showConfirmPass)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                      >
+                        {showConfirmPass ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
+                      </button>
                     </div>
                   </div>
                   <button

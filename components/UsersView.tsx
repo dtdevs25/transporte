@@ -62,6 +62,11 @@ export const UsersView: React.FC<Props> = ({ apiUrl, showNotification }) => {
                 setEditingUserId(null);
                 setNewUser({ username: '', password: '', role: 'user', email: '' });
                 fetchUsers();
+                showNotification(
+                    'Sucesso',
+                    editingUserId ? 'Dados do usuário atualizados.' : 'Usuário criado e convite enviado por e-mail.',
+                    'success'
+                );
             } else {
                 const data = await response.json();
                 setError(data.error || 'Erro ao processar usuário');
