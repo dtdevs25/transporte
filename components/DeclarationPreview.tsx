@@ -105,7 +105,7 @@ export const DeclarationPreview: React.FC<Props> = ({ declaration, onSignatureCl
           <div className="p-2 space-y-2 text-[9px] flex-1">
             <div><span className="font-bold">Nome do Motorista:</span> {declaration.carrier.driverName}</div>
             <div><span className="font-bold">RG:</span> {declaration.carrier.rg}</div>
-            <div><span className="font-bold">Data da Coleta:</span> {new Date(declaration.carrier.collectionDate).toLocaleDateString('pt-BR')}</div>
+            <div><span className="font-bold">Data da Coleta:</span> {declaration.carrier.collectionDate ? new Date(declaration.carrier.collectionDate).toLocaleDateString('pt-BR') : ''}</div>
             <div className="mt-4 pt-2 border-t border-dotted border-gray-400">
               <span className="font-bold">Razão Social da Empresa:</span> {declaration.carrier.companyName}
             </div>

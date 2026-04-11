@@ -211,6 +211,7 @@ export const DeclarationForm: React.FC<Props> = ({
   };
 
   const isStep1Valid = () => {
+    const isGEHealthCare = sender.companyName?.trim() === 'GE HealthCare';
     const hasCpfOrCnpj = (sender.cpf && sender.cpf.replace(/\D/g, '').length === 11) ||
       (sender.cnpj && sender.cnpj.replace(/\D/g, '').length === 14);
 
@@ -218,7 +219,7 @@ export const DeclarationForm: React.FC<Props> = ({
       requestNumber && requestNumber.trim().length > 5 &&
       employeeEmail && employeeEmail.trim().length > 5 &&
       sender.name.trim().length > 3 &&
-      hasCpfOrCnpj &&
+      (isGEHealthCare || hasCpfOrCnpj) &&
       sender.address.trim().length > 5 &&
       sender.number.trim().length > 0 &&
       sender.bairro.trim().length > 2 &&
@@ -286,6 +287,7 @@ export const DeclarationForm: React.FC<Props> = ({
 
   const isCpfFilled = sender.cpf && sender.cpf.replace(/\D/g, '').length === 11;
   const isCnpjFilled = sender.cnpj && sender.cnpj.replace(/\D/g, '').length === 14;
+  const isGEHealthCare = sender.companyName?.trim() === 'GE HealthCare';
 
   return (
     <div className="p-6 md:p-10 space-y-10">
@@ -343,14 +345,14 @@ export const DeclarationForm: React.FC<Props> = ({
                 <FormField label="Nome Completo *" value={sender.name} onChange={(v) => onUpdate({ sender: { ...sender, name: v } })} />
               </div>
               <FormField
-                label={`CPF ${isCnpjFilled ? '' : '*'}`}
+                label={`CPF ${(isCnpjFilled || isGEHealthCare) ? '' : '*'}`}
                 value={sender.cpf}
                 onChange={(v) => onUpdate({ sender: { ...sender, cpf: formatCPF(v) } })}
                 placeholder="000.000.000-00"
               />
               <div className="relative">
                 <FormField
-                  label={`CNPJ ${isCpfFilled ? '' : '*'}`}
+                  label={`CNPJ ${(isCpfFilled || isGEHealthCare) ? '' : '*'}`}
                   value={sender.cnpj || ''}
                   onChange={(v) => {
                     const formatted = formatCNPJ(v);
@@ -366,7 +368,7 @@ export const DeclarationForm: React.FC<Props> = ({
                 )}
               </div>
               <FormField
-                label={`Razão Social ${isCpfFilled ? '' : '*'}`}
+                label={`Razão Social ${(isCpfFilled || isGEHealthCare) ? '' : '*'}`}
                 value={sender.companyName || ''}
                 onChange={(v) => onUpdate({ sender: { ...sender, companyName: v } })}
                 placeholder="Nome da Empresa"
